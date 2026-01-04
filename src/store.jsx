@@ -92,7 +92,6 @@ export const AppProvider = ({ children }) => {
         <AppContext.Provider value={{
             viewYear, setViewYear,
             viewMonth, setViewMonth,
-            viewMonth, setViewMonth,
             hourlyRate, setHourlyRate,
             dailyHours, setDailyHours,
             tdsPercentage, setTdsPercentage,
