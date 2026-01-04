@@ -7,7 +7,7 @@ A modern, responsive React application designed to help users track their workda
 - **Authentication**: Secure user login and signup powered by Supabase Auth.
 - **Organization Management**: Create, join, and switch between different organizations or workspaces.
 - **Interactive Calendar**:
-  - Visual calendar based on the Nepali date system (integration pending/in-progress or handled via `nepali-date-converter`).
+  - Visual calendar based on the Nepali date system using `nepali-date-converter`.
   - Mark/unmark workdays directly on the calendar.
   - Visual indicators for weekends and holidays.
 - **Salary Statistics**:
@@ -48,15 +48,19 @@ Ensure you have the following installed on your local machine:
 
 ### Configuration
 
-The application authenticates with a Supabase backend.
-Currently, the Supabase credentials might be configured directly in `src/utils/supabase.js`.
+The application authenticates with a Supabase backend and requires environment variables to function securely.
 
-For a production or custom setup, it is recommended to use environment variables. Create a `.env` file in the root directory:
+1.  **Create a `.env` file** in the root directory. You can use the provided example as a template:
+    ```bash
+    cp .env.example .env
+    ```
 
-```env
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
+2.  **Add your Supabase credentials** to the `.env` file:
+    ```env
+    VITE_SUPABASE_URL=your_supabase_project_url
+    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+    ```
+    > **Note:** Never commit your actual `.env` file to version control. The `.env.example` file is safe to commit.
 
 ### Running the Application
 
@@ -88,3 +92,11 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## 📄 License
 
 This project is open source.
+
+## 🛡️ Security
+
+This project takes security seriously:
+- **Environment Variables**: Sensitive keys are managed via `.env` files.
+- **Row Level Security (RLS)**: Database access is strictly controlled by Supabase RLS policies, ensuring users can only access their own data.
+- **Content Security Policy (CSP)**: Implemented to protect against XSS attacks.
+
