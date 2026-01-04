@@ -211,16 +211,27 @@ export function AppProvider({ children }) {
             return;
         }
 
-        const { error } = await supabase.from('organizations').delete().eq('id', id);
-        if (!error) {
+        console.log("Attempting to delete org:", id, "Type:", typeof id);
+
+        const { error, count } = await supabase
+            .from('organizations')
+            .delete({ count: 'exact' })
+            .eq('id', id);
+
+        console.log("Delete result:", { error, count });
+
+        if (error) {
+            console.error("Delete failed:", error);
+            alert("Failed to delete organization: " + error.message);
+        } else if (count === 0) {
+            console.error("Delete affected 0 rows. Check RLS or ID match.");
+            alert("Failed to delete: Organization not found or permission denied (0 rows affected).");
+        } else {
             const newOrgs = organizations.filter(o => o.id !== id);
             setOrganizations(newOrgs);
             if (currentOrgId === id) {
                 switchOrganization(newOrgs[0].id);
             }
-        } else {
-            console.error("Delete failed:", error);
-            alert("Failed to delete organization: " + error.message);
         }
     };
 
