@@ -35,11 +35,12 @@ const OrganizationManager = ({ onClose }) => {
         setEditingId(null);
     };
 
-    const handleDelete = async (id, e) => {
+    const [deleteConfirmationId, setDeleteConfirmationId] = useState(null);
+
+    const confirmDelete = async (id, e) => {
         e.stopPropagation();
-        if (window.confirm('Delete this organization? All attendance data will be lost.')) {
-            await deleteOrganization(id);
-        }
+        await deleteOrganization(id);
+        setDeleteConfirmationId(null);
     };
 
     return (
@@ -91,15 +92,36 @@ const OrganizationManager = ({ onClose }) => {
                                     >
                                         <Settings size={16} />
                                     </button>
-                                    {organizations.length > 1 && (
-                                        <button
-                                            onClick={(e) => handleDelete(org.id, e)}
-                                            className="icon-btn"
-                                            title="Delete"
-                                            style={{ color: 'var(--danger)' }}
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
+                                    {deleteConfirmationId === org.id ? (
+                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--danger)' }}>Confirm?</span>
+                                            <button
+                                                onClick={(e) => confirmDelete(org.id, e)}
+                                                className="icon-btn"
+                                                title="Confirm Delete"
+                                                style={{ color: 'var(--danger)' }}
+                                            >
+                                                <Check size={16} />
+                                            </button>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); setDeleteConfirmationId(null); }}
+                                                className="icon-btn"
+                                                title="Cancel"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        organizations.length > 1 && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); setDeleteConfirmationId(org.id); }}
+                                                className="icon-btn"
+                                                title="Delete"
+                                                style={{ color: 'var(--danger)' }}
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )
                                     )}
                                 </div>
                             </>
