@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { supabase } from './utils/supabase';
 import { getCurrentDate } from './utils/nepali-calendar';
 import { useDebounce } from './hooks/useDebounce';
-import { useRef } from 'react';
 
 const AppContext = createContext();
 
@@ -13,31 +12,27 @@ export function AppProvider({ children }) {
     const [viewMonth, setViewMonth] = useState(current.month);
 
     useEffect(() => {
-        // Check for date change every minute
         const timer = setInterval(() => {
             const now = getCurrentDate();
             if (now.year !== current.year || now.month !== current.month || now.day !== current.day) {
                 setCurrent(now);
-                // Optional: Auto-switch view if in current month view? 
-                // Let's keep view stable to avoiding jarring jumps, just update standard "today" indicator.
             }
         }, 60000);
         return () => clearInterval(timer);
     }, [current]);
 
-    // Settings
-    const [hourlyRate, setHourlyRate] = useState(() => Number(localStorage.getItem('metric_hourlyRate')) || 0);
-    const [dailyHours, setDailyHours] = useState(() => Number(localStorage.getItem('metric_dailyHours')) || 8);
-    const [tdsPercentage, setTdsPercentage] = useState(() => Number(localStorage.getItem('metric_tdsPercentage')) || 1);
+    // --- Multi-Org State ---
+    const [organizations, setOrganizations] = useState([]);
+    const [currentOrgId, setCurrentOrgId] = useState(() => localStorage.getItem('last_org_id') || null);
 
-    // Theme
+    // Derived Current Org
+    const currentOrg = organizations.find(o => o.id === currentOrgId) || organizations[0] || null;
+
+    // Theme (Global)
     const [theme, setTheme] = useState(() => localStorage.getItem('app_theme') || 'dark');
 
-    // Attendance: Dictionary { "YYYY-MM-DD": true }
-    const [markedDates, setMarkedDates] = useState(() => {
-        const saved = localStorage.getItem('metric_markedDates');
-        return saved ? JSON.parse(saved) : {};
-    });
+    // Attendance: { "YYYY-MM-DD": true } for CURRENT Org
+    const [markedDates, setMarkedDates] = useState({});
 
     // Auth & Sync State
     const [user, setUser] = useState(null);
@@ -45,20 +40,14 @@ export function AppProvider({ children }) {
     const [isSyncing, setIsSyncing] = useState(false);
     const hasLoadedFromRemote = useRef(false);
 
-    // Debounced values
-    const debouncedHourlyRate = useDebounce(hourlyRate, 1000);
-    const debouncedDailyHours = useDebounce(dailyHours, 1000);
-    const debouncedTdsPercentage = useDebounce(tdsPercentage, 1000);
-
     // --- Effects ---
 
     // 1. Theme Effect
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('app_theme', theme);
-
         if (user && hasLoadedFromRemote.current) {
-            supabase.from('user_settings').update({ theme }).eq('user_id', user.id).then(({ error }) => {
+            supabase.from('user_settings').upsert({ user_id: user.id, theme }, { onConflict: 'user_id' }).then(({ error }) => {
                 if (error) console.error('Error syncing theme:', error);
             });
         }
@@ -69,10 +58,9 @@ export function AppProvider({ children }) {
         const handleAuthChange = async (session) => {
             if (!session?.user) {
                 setUser(null);
+                setOrganizations([]);
+                setCurrentOrgId(null);
                 setMarkedDates({});
-                setHourlyRate(0);
-                setDailyHours(8);
-                setTdsPercentage(1);
                 setLoadingAuth(false);
                 hasLoadedFromRemote.current = false;
                 return;
@@ -86,18 +74,13 @@ export function AppProvider({ children }) {
             }
         };
 
-        // Initial check
         supabase.auth.getSession().then(({ data: { session } }) => {
             handleAuthChange(session);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('Auth event:', event);
-            if (event === 'SIGNED_OUT') {
-                handleAuthChange(null);
-            } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-                handleAuthChange(session);
-            }
+            if (event === 'SIGNED_OUT') handleAuthChange(null);
+            else if (['SIGNED_IN', 'TOKEN_REFRESHED', 'USER_UPDATED'].includes(event)) handleAuthChange(session);
         });
 
         return () => subscription.unsubscribe();
@@ -109,32 +92,45 @@ export function AppProvider({ children }) {
             setIsSyncing(true);
             setLoadingAuth(true);
 
-            // 1. Load Settings
-            const { data: settings, error: settingsError } = await supabase
-                .from('user_settings')
+            // Fetch Organizations
+            const { data: orgs, error: orgError } = await supabase
+                .from('organizations')
                 .select('*')
                 .eq('user_id', userId)
-                .single();
+                .order('created_at', { ascending: true });
 
-            if (settings && !settingsError) {
-                // IMPORTANT: update state but don't trigger a re-sync back to server immediately
-                if (settings.hourly_rate !== null) setHourlyRate(Number(settings.hourly_rate));
-                if (settings.daily_hours !== null) setDailyHours(Number(settings.daily_hours));
-                if (settings.tds_percentage !== null) setTdsPercentage(Number(settings.tds_percentage));
-                if (settings.theme) setTheme(settings.theme);
+            if (orgError) throw orgError;
+
+            // If no orgs (edge case), create default? (Migration should have covered this)
+            // But let's be safe.
+            let validOrgs = orgs || [];
+            if (validOrgs.length === 0) {
+                // Fallback create
+                const { data: newOrg } = await supabase.from('organizations').insert({
+                    user_id: userId, name: 'Primary Job', hourly_rate: 0, daily_hours: 8
+                }).select().single();
+                if (newOrg) validOrgs = [newOrg];
             }
 
-            // 2. Load Attendance
-            const { data: attendance, error: attendanceError } = await supabase
-                .from('attendance')
-                .select('date_str')
-                .eq('user_id', userId);
+            setOrganizations(validOrgs);
 
-            if (attendance && !attendanceError) {
-                const dates = {};
-                attendance.forEach(row => dates[row.date_str] = true);
-                setMarkedDates(dates);
+            // Determine active org
+            const savedId = localStorage.getItem('last_org_id');
+            const activeId = validOrgs.find(o => o.id === savedId)?.id || validOrgs[0]?.id;
+
+            // If we found a valid ID, set it. Note: currentOrgId state update might be async, 
+            // so we use local variable for fetching attendance.
+            setCurrentOrgId(activeId);
+            if (activeId) localStorage.setItem('last_org_id', activeId);
+
+            // Fetch Attendance for Active Org
+            if (activeId) {
+                await fetchAttendance(activeId);
             }
+
+            // Fetch Theme from user_settings (if exists)
+            const { data: settings } = await supabase.from('user_settings').select('theme').eq('user_id', userId).single();
+            if (settings?.theme) setTheme(settings.theme);
 
             hasLoadedFromRemote.current = true;
         } catch (err) {
@@ -145,126 +141,179 @@ export function AppProvider({ children }) {
         }
     };
 
-    // 4. Persistence to Local
-    useEffect(() => {
-        localStorage.setItem('metric_hourlyRate', hourlyRate);
-        localStorage.setItem('metric_dailyHours', dailyHours);
-        localStorage.setItem('metric_tdsPercentage', tdsPercentage);
-        localStorage.setItem('metric_markedDates', JSON.stringify(markedDates));
-    }, [hourlyRate, dailyHours, tdsPercentage, markedDates]);
+    const fetchAttendance = async (orgId) => {
+        const { data: attendance, error } = await supabase
+            .from('attendance')
+            .select('date_str')
+            .eq('organization_id', orgId);
 
-    // 5. Sync settings to Remote (Only AFTER first load)
-    useEffect(() => {
-        if (user && hasLoadedFromRemote.current && !loadingAuth && !isSyncing) {
-            supabase.from('user_settings').upsert({
-                user_id: user.id,
-                hourly_rate: debouncedHourlyRate,
-                daily_hours: debouncedDailyHours,
-                tds_percentage: debouncedTdsPercentage,
-                updated_at: new Date()
-            }).then(({ error }) => {
-                if (error) console.error('Error saving settings:', error);
-            });
+        if (!error && attendance) {
+            const dates = {};
+            attendance.forEach(row => dates[row.date_str] = true);
+            setMarkedDates(dates);
         }
-    }, [debouncedHourlyRate, debouncedDailyHours, debouncedTdsPercentage, user, loadingAuth, isSyncing]);
-
+    };
 
     // --- Actions ---
 
-    // Calendar expects (year, month, day)
+    const switchOrganization = async (orgId) => {
+        if (orgId === currentOrgId) return;
+        setIsSyncing(true);
+        setCurrentOrgId(orgId);
+        localStorage.setItem('last_org_id', orgId);
+        setMarkedDates({}); // Clear transiently
+        try {
+            await fetchAttendance(orgId);
+        } catch (e) {
+            console.error("Error fetching attendance", e);
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    const addOrganization = async (name) => {
+        setIsSyncing(true);
+        const { data, error } = await supabase.from('organizations').insert({
+            user_id: user.id,
+            name,
+            hourly_rate: 0,
+            daily_hours: 8,
+            tds_percentage: 1
+        }).select().single();
+
+        if (!error && data) {
+            setOrganizations(prev => [...prev, data]);
+            switchOrganization(data.id);
+        }
+        setIsSyncing(false);
+    };
+
+    const updateOrganization = async (id, updates) => {
+        // Optimistic update
+        setOrganizations(prev => prev.map(o => o.id === id ? { ...o, ...updates } : o));
+
+        // Debounce actual DB call if needed? For now, direct simple update.
+        // If rapid typing inputs, this might spam DB.
+        // We should probably rely on the ID being stable.
+        const { error } = await supabase.from('organizations').update(updates).eq('id', id);
+        if (error) {
+            console.error('Update failed', error);
+        }
+    };
+
+    const deleteOrganization = async (id) => {
+        if (organizations.length <= 1) return; // Prevent deleting last one
+
+        const { error } = await supabase.from('organizations').delete().eq('id', id);
+        if (!error) {
+            const newOrgs = organizations.filter(o => o.id !== id);
+            setOrganizations(newOrgs);
+            if (currentOrgId === id) {
+                switchOrganization(newOrgs[0].id);
+            }
+        }
+    };
+
+    // Calendar Action
     const toggleDate = async (year, month, day) => {
+        if (!currentOrgId || !user) return;
         const dateKey = `${year}-${month}-${day}`;
         const newDates = { ...markedDates };
         const isAdding = !newDates[dateKey];
 
-        if (isAdding) {
-            newDates[dateKey] = true;
-        } else {
-            delete newDates[dateKey];
-        }
+        if (isAdding) newDates[dateKey] = true;
+        else delete newDates[dateKey];
+
         setMarkedDates(newDates);
 
-        if (user) {
-            if (isAdding) {
-                await supabase.from('attendance').insert({ user_id: user.id, date_str: dateKey });
-            } else {
-                await supabase.from('attendance').delete().match({ user_id: user.id, date_str: dateKey });
-            }
+        if (isAdding) {
+            await supabase.from('attendance').insert({
+                user_id: user.id,
+                organization_id: currentOrgId,
+                date_str: dateKey
+            });
+        } else {
+            await supabase.from('attendance').delete().match({
+                user_id: user.id,
+                organization_id: currentOrgId,
+                date_str: dateKey
+            });
         }
     };
 
-    const isMarked = (year, month, day) => {
-        return !!markedDates[`${year}-${month}-${day}`];
-    };
+    const isMarked = (year, month, day) => !!markedDates[`${year}-${month}-${day}`];
 
-    const toggleTheme = () => {
-        setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+    // Getters/Setters Compatibility for existing components
+    // These update the CURRENT organization
+    const setHourlyRate = (val) => {
+        if (currentOrgId) updateOrganization(currentOrgId, { hourly_rate: val });
+    };
+    const setDailyHours = (val) => {
+        if (currentOrgId) updateOrganization(currentOrgId, { daily_hours: val });
+    };
+    const setTdsPercentage = (val) => {
+        if (currentOrgId) updateOrganization(currentOrgId, { tds_percentage: val });
     };
 
     const resetData = async () => {
-        if (window.confirm('Are you sure? This will clear all data and sign you out.')) {
-            try {
-                if (user) await supabase.auth.signOut();
-            } catch (err) {
-                console.error('Sign out error during reset:', err);
+        if (window.confirm('Reset current workspace data?')) {
+            if (user && currentOrgId) {
+                await supabase.from('attendance').delete().eq('organization_id', currentOrgId);
+                await updateOrganization(currentOrgId, { hourly_rate: 0, daily_hours: 8, tds_percentage: 1 });
             }
             setMarkedDates({});
-            setHourlyRate(0);
-            setDailyHours(8);
-            setTdsPercentage(1);
-            localStorage.clear();
-            window.location.reload();
         }
     };
 
     const forceLogout = async () => {
-        try {
-            await supabase.auth.signOut();
-        } catch (err) {
-            console.error('Force logout error:', err);
-        }
+        try { await supabase.auth.signOut(); } catch (e) { }
         localStorage.clear();
         window.location.reload();
     };
 
-    // Calculation (Iterating over object keys)
+    // Calculation
     const getMonthlyStats = () => {
         let count = 0;
-        // Iterate over keys since markedDates is a dictionary
         Object.keys(markedDates).forEach(dateStr => {
             const [y, m, d] = dateStr.split('-').map(Number);
-            if (y === viewYear && m === viewMonth) {
-                count++;
-            }
+            if (y === viewYear && m === viewMonth) count++;
         });
 
-        const grossSalary = count * dailyHours * hourlyRate;
-        const tdsAmount = (grossSalary * tdsPercentage) / 100;
+        const rate = Number(currentOrg?.hourly_rate || 0);
+        const hours = Number(currentOrg?.daily_hours || 8);
+        const tds = Number(currentOrg?.tds_percentage || 0);
+
+        const grossSalary = count * hours * rate;
+        const tdsAmount = (grossSalary * tds) / 100;
         const netSalary = grossSalary - tdsAmount;
 
-        return {
-            daysWorked: count,
-            totalHours: count * dailyHours,
-            totalSalary: grossSalary,
-            grossSalary,
-            tdsAmount,
-            netSalary
-        };
+        return { daysWorked: count, totalHours: count * hours, totalSalary: grossSalary, grossSalary, tdsAmount, netSalary };
     };
 
     return (
         <AppContext.Provider value={{
             viewYear, setViewYear,
             viewMonth, setViewMonth,
-            hourlyRate, setHourlyRate,
-            dailyHours, setDailyHours,
-            tdsPercentage, setTdsPercentage,
+
+            // Exposed Props
+            hourlyRate: currentOrg?.hourly_rate || 0, setHourlyRate,
+            dailyHours: currentOrg?.daily_hours || 8, setDailyHours,
+            tdsPercentage: currentOrg?.tds_percentage || 1, setTdsPercentage,
+
             markedDates, toggleDate, isMarked,
             resetData, forceLogout,
             user, loadingAuth, isSyncing,
             theme, toggleTheme,
             getMonthlyStats,
-            currentDate: current
+            currentDate: current,
+
+            // New Props
+            organizations,
+            currentOrg,
+            switchOrganization,
+            addOrganization,
+            updateOrganization,
+            deleteOrganization
         }}>
             {children}
         </AppContext.Provider>

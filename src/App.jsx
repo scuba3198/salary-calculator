@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { AppProvider, useAppStore } from './store';
 import Calendar from './components/Calendar';
 import SalaryStats from './components/SalaryStats';
+import OrganizationManager from './components/OrganizationManager';
 import Auth from './components/Auth';
-import { LogIn, LogOut, X, Sun, Moon } from 'lucide-react';
+import { LogIn, LogOut, X, Sun, Moon, Briefcase } from 'lucide-react';
 import { supabase } from './utils/supabase';
 
 function AppContent() {
-  const { user, theme, toggleTheme, forceLogout } = useAppStore();
+  const { user, theme, toggleTheme, forceLogout, currentOrg } = useAppStore();
   const [showAuth, setShowAuth] = useState(false);
+  const [showOrgManager, setShowOrgManager] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -46,11 +48,20 @@ function AppContent() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <div style={{ textAlign: 'right' }}>
                 <span style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold' }}>
-                  Welcome, {user.user_metadata?.full_name || 'User'}
+                  {user.user_metadata?.full_name || 'User'}
                 </span>
-                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                  {user.email}
-                </span>
+                {currentOrg && (
+                  <button
+                    onClick={() => setShowOrgManager(true)}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.25rem',
+                      fontSize: '0.75rem', color: 'var(--accent-color)', background: 'none', border: 'none',
+                      cursor: 'pointer', padding: 0
+                    }}
+                  >
+                    <Briefcase size={12} /> {currentOrg.name}
+                  </button>
+                )}
               </div>
               <button
                 onClick={handleLogout}
@@ -99,6 +110,18 @@ function AppContent() {
               <X size={24} />
             </button>
             <Auth />
+          </div>
+        </div>
+      )}
+
+      {showOrgManager && user && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.5)', zIndex: 1000,
+          display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem'
+        }}>
+          <div style={{ position: 'relative', width: '100%', maxWidth: '500px', background: 'var(--surface)', borderRadius: '1rem', border: '1px solid var(--border)' }}>
+            <OrganizationManager onClose={() => setShowOrgManager(false)} />
           </div>
         </div>
       )}
