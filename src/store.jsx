@@ -1,79 +1,182 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from './utils/supabase';
 import { getCurrentDate } from './utils/nepali-calendar';
 
 const AppContext = createContext();
 
-export const AppProvider = ({ children }) => {
-    // Default to current Nepali Date
+export function AppProvider({ children }) {
+    // Default to current Nepali Date (for Calendar View)
     const current = getCurrentDate();
-
     const [viewYear, setViewYear] = useState(current.year);
     const [viewMonth, setViewMonth] = useState(current.month);
 
     // Settings
-    // Settings
-    const [hourlyRate, setHourlyRate] = useState(() => {
-        const saved = localStorage.getItem('hourlyRate');
-        return saved ? Number(saved) : '';
-    });
-    const [dailyHours, setDailyHours] = useState(() => {
-        const saved = localStorage.getItem('dailyHours');
-        return saved ? Number(saved) : '';
-    });
-    const [tdsPercentage, setTdsPercentage] = useState(() => {
-        const saved = localStorage.getItem('tdsPercentage');
-        return saved ? Number(saved) : '';
-    });
+    const [hourlyRate, setHourlyRate] = useState(() => Number(localStorage.getItem('metric_hourlyRate')) || 0);
+    const [dailyHours, setDailyHours] = useState(() => Number(localStorage.getItem('metric_dailyHours')) || 8);
+    const [tdsPercentage, setTdsPercentage] = useState(() => Number(localStorage.getItem('metric_tdsPercentage')) || 1);
 
-    useEffect(() => {
-        localStorage.setItem('hourlyRate', hourlyRate);
-    }, [hourlyRate]);
+    // Theme
+    const [theme, setTheme] = useState(() => localStorage.getItem('app_theme') || 'dark');
 
-    useEffect(() => {
-        localStorage.setItem('dailyHours', dailyHours);
-    }, [dailyHours]);
-
-    useEffect(() => {
-        localStorage.setItem('tdsPercentage', tdsPercentage);
-    }, [tdsPercentage]);
-
-    // Attendance: Set of strings "YYYY-MM-DD"
+    // Attendance: Dictionary { "YYYY-MM-DD": true }
     const [markedDates, setMarkedDates] = useState(() => {
-        const saved = localStorage.getItem('markedDates');
-        return saved ? new Set(JSON.parse(saved)) : new Set();
+        const saved = localStorage.getItem('metric_markedDates');
+        return saved ? JSON.parse(saved) : {};
     });
 
+    // Auth
+    const [user, setUser] = useState(null);
+    const [loadingAuth, setLoadingAuth] = useState(true);
+
+    // --- Effects ---
+
+    // 1. Theme Effect
     useEffect(() => {
-        localStorage.setItem('markedDates', JSON.stringify([...markedDates]));
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('app_theme', theme);
+
+        if (user) {
+            supabase.from('user_settings').update({ theme }).eq('user_id', user.id).then(({ error }) => {
+                if (error) console.error('Error syncing theme:', error);
+            });
+        }
+    }, [theme, user]);
+
+    // 2. Auth Listener
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setUser(session?.user ?? null);
+            if (session?.user) {
+                loadUserData(session.user.id);
+            } else {
+                setLoadingAuth(false);
+            }
+        });
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            setUser(session?.user ?? null);
+            if (session?.user) {
+                loadUserData(session.user.id);
+            } else {
+                setLoadingAuth(false);
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
+
+    // 3. User Data Handler
+    const loadUserData = async (userId) => {
+        try {
+            setLoadingAuth(true);
+            const { data: settings, error: settingsError } = await supabase
+                .from('user_settings')
+                .select('*')
+                .eq('user_id', userId)
+                .single();
+
+            if (settings && !settingsError) {
+                if (settings.hourly_rate !== null) setHourlyRate(Number(settings.hourly_rate));
+                if (settings.daily_hours !== null) setDailyHours(Number(settings.daily_hours));
+                if (settings.tds_percentage !== null) setTdsPercentage(Number(settings.tds_percentage));
+                if (settings.theme) setTheme(settings.theme);
+            }
+
+            const { data: attendance, error: attendanceError } = await supabase
+                .from('attendance')
+                .select('date_str')
+                .eq('user_id', userId);
+
+            if (attendance && !attendanceError) {
+                const dates = {};
+                attendance.forEach(row => dates[row.date_str] = true);
+                setMarkedDates(dates);
+            }
+        } catch (err) {
+            console.error('Error loading user data:', err);
+        } finally {
+            setLoadingAuth(false);
+        }
+    };
+
+    // 4. Persistence
+    useEffect(() => {
+        localStorage.setItem('metric_hourlyRate', hourlyRate);
+        localStorage.setItem('metric_dailyHours', dailyHours);
+        localStorage.setItem('metric_tdsPercentage', tdsPercentage);
+
+        if (user && !loadingAuth) {
+            supabase.from('user_settings').upsert({
+                user_id: user.id,
+                hourly_rate: hourlyRate,
+                daily_hours: dailyHours,
+                tds_percentage: tdsPercentage,
+                updated_at: new Date()
+            }).then(({ error }) => {
+                if (error) console.error('Error saving settings:', error);
+            });
+        }
+    }, [hourlyRate, dailyHours, tdsPercentage, user, loadingAuth]);
+
+    useEffect(() => {
+        localStorage.setItem('metric_markedDates', JSON.stringify(markedDates));
     }, [markedDates]);
 
-    // Helper to toggle a date
-    const toggleDate = (year, month, day) => {
-        const key = `${year}-${month}-${day}`;
-        setMarkedDates(prev => {
-            const next = new Set(prev);
-            if (next.has(key)) {
-                next.delete(key);
+
+    // --- Actions ---
+
+    // Calendar expects (year, month, day)
+    const toggleDate = async (year, month, day) => {
+        const dateKey = `${year}-${month}-${day}`;
+        const newDates = { ...markedDates };
+        const isAdding = !newDates[dateKey];
+
+        if (isAdding) {
+            newDates[dateKey] = true;
+        } else {
+            delete newDates[dateKey];
+        }
+        setMarkedDates(newDates);
+
+        if (user) {
+            if (isAdding) {
+                await supabase.from('attendance').insert({ user_id: user.id, date_str: dateKey });
             } else {
-                next.add(key);
+                await supabase.from('attendance').delete().match({ user_id: user.id, date_str: dateKey });
             }
-            return next;
-        });
+        }
     };
 
     const isMarked = (year, month, day) => {
-        return markedDates.has(`${year}-${month}-${day}`);
+        return !!markedDates[`${year}-${month}-${day}`];
     };
 
-    // Calculation
+    const toggleTheme = () => {
+        setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+    };
+
+    const resetData = () => {
+        if (window.confirm('Are you sure? This will clear all local data.')) {
+            setMarkedDates({});
+            setHourlyRate(0);
+            setDailyHours(8);
+            setTdsPercentage(1);
+            localStorage.clear();
+            window.location.reload();
+        }
+    };
+
+    // Calculation (Iterating over object keys)
     const getMonthlyStats = () => {
         let count = 0;
-        for (let dateStr of markedDates) {
+        // Iterate over keys since markedDates is a dictionary
+        Object.keys(markedDates).forEach(dateStr => {
             const [y, m, d] = dateStr.split('-').map(Number);
             if (y === viewYear && m === viewMonth) {
                 count++;
             }
-        }
+        });
+
         const grossSalary = count * dailyHours * hourlyRate;
         const tdsAmount = (grossSalary * tdsPercentage) / 100;
         const netSalary = grossSalary - tdsAmount;
@@ -81,7 +184,7 @@ export const AppProvider = ({ children }) => {
         return {
             daysWorked: count,
             totalHours: count * dailyHours,
-            totalSalary: grossSalary, // Keeping prop name for backward compat if needed, but adding specific ones
+            totalSalary: grossSalary,
             grossSalary,
             tdsAmount,
             netSalary
@@ -95,13 +198,18 @@ export const AppProvider = ({ children }) => {
             hourlyRate, setHourlyRate,
             dailyHours, setDailyHours,
             tdsPercentage, setTdsPercentage,
-            toggleDate, isMarked,
+            markedDates, toggleDate, isMarked,
+            resetData,
+            user, loadingAuth,
+            theme, toggleTheme,
             getMonthlyStats,
             currentDate: current
         }}>
             {children}
         </AppContext.Provider>
     );
-};
+}
 
-export const useAppStore = () => useContext(AppContext);
+export function useAppStore() {
+    return useContext(AppContext);
+}

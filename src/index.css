@@ -1,5 +1,5 @@
 :root {
-  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(30, 30, 30, 0.95);
   --glass-border: rgba(255, 255, 255, 0.2);
   --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
   --primary-color: #6c5ce7;
@@ -11,152 +11,178 @@
   --bg-gradient: linear-gradient(45deg, #2d3436, #000000);
 }
 
-body {
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  background: var(--bg-gradient);
-  color: var(--text-primary);
-  min-height: 100vh;
+[data-theme='light'] {
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  /* Highly opaque white for light mode */
+  --glass-border: rgba(0, 0, 0, 0.1);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  --primary-color: #6c5ce7;
+  --accent-color: #6c5ce7;
+  /* Darker accent for contrast */
+  --text-primary: #2d3436;
+  --text-secondary: #636e72;
+  --bg-gradient: linear-gradient(45deg, #dfe6e9, #ffffff);
+  --background: rgba(255, 255, 255, 0.9);
+  /* Input background */
+  --surface: rgba(255, 255, 255, 0.95);
+  --border: rgba(0, 0, 0, 0.1);
 }
 
-#root {
-  width: 100%;
-}
+:root {
+  /* Compatible variables for new components */
+  --surface: var(--glass-bg);
+  --border: var(--glass-border);
+  --primary: var(--primary-color);
+  --primary-light: rgba(108, 92, 231, 0.2);
+  --background: rgba(0, 0, 0, 0.5);
+  --text: var(--text-primary);
 
-.glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
-  border-radius: 16px;
-  padding: 1.5rem;
-}
-
-/* Calendar Grid */
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 0.5rem;
-  text-align: center;
-}
-
-.calendar-header {
-  font-weight: bold;
-  color: var(--accent-color);
-  padding-bottom: 0.5rem;
-}
-
-.calendar-day {
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  user-select: none;
-}
-
-.calendar-day:hover:not(.disabled) {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.calendar-day.active {
-  background: var(--success);
-  color: #000;
-  font-weight: bold;
-  box-shadow: 0 0 10px var(--success);
-}
-
-.calendar-day.today {
-  border: 2px solid var(--accent-color);
-}
-
-.calendar-day.disabled {
-  cursor: default;
-}
-
-.calendar-day.is-holiday {
-  color: var(--danger);
-  font-weight: bold;
-}
-
-/* Ensure holiday color doesn't override active state text color which needs to be dark */
-.calendar-day.active.is-holiday {
-  color: #000;
-}
-
-/* Stats */
-.stats-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.stat-box {
-  text-align: center;
-}
-
-input {
-  width: 100%;
-  padding: 0.75rem;
-  border-radius: 8px;
-  border: 1px solid var(--glass-border);
-  background: rgba(0, 0, 0, 0.2);
-  color: var(--text-primary);
-  margin-top: 0.5rem;
-  font-size: 1rem;
-}
-
-input:focus {
-  outline: none;
-  border-color: var(--accent-color);
-}
-
-/* Utils */
-.flex-center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.mb-4 {
-  margin-bottom: 1rem;
-}
-
-.text-xl {
-  font-size: 1.25rem;
-}
-
-/* Mobile Responsiveness */
-@media (max-width: 768px) {
-  .glass-card {
-    padding: 1rem;
+  body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-gradient);
+    color: var(--text-primary);
+    min-height: 100vh;
   }
 
-  .calendar-day {
-    font-size: 0.9rem;
+  #root {
+    width: 100%;
+  }
+
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 16px;
+    padding: 1.5rem;
+  }
+
+  /* Calendar Grid */
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+    text-align: center;
   }
 
   .calendar-header {
-    font-size: 0.9rem;
+    font-weight: bold;
+    color: var(--accent-color);
+    padding-bottom: 0.5rem;
   }
 
-  h1 {
-    font-size: 1.75rem;
+  .calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
   }
 
-  h2 {
-    font-size: 1.25rem;
+  .calendar-day:hover:not(.disabled) {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .calendar-day.active {
+    background: var(--success);
+    color: #000;
+    font-weight: bold;
+    box-shadow: 0 0 10px var(--success);
+  }
+
+  .calendar-day.today {
+    border: 2px solid var(--accent-color);
+  }
+
+  .calendar-day.disabled {
+    cursor: default;
+  }
+
+  .calendar-day.is-holiday {
+    color: var(--danger);
+    font-weight: bold;
+  }
+
+  /* Ensure holiday color doesn't override active state text color which needs to be dark */
+  .calendar-day.active.is-holiday {
+    color: #000;
+  }
+
+  /* Stats */
+  .stats-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .stat-box {
+    text-align: center;
   }
 
   input {
-    padding: 0.6rem;
-    font-size: 0.9rem;
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--glass-border);
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--text-primary);
+    margin-top: 0.5rem;
+    font-size: 1rem;
   }
 
-  .stats-container {
-    gap: 1rem;
+  input:focus {
+    outline: none;
+    border-color: var(--accent-color);
   }
-}
+
+  /* Utils */
+  .flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .mb-4 {
+    margin-bottom: 1rem;
+  }
+
+  .text-xl {
+    font-size: 1.25rem;
+  }
+
+  /* Mobile Responsiveness */
+  @media (max-width: 768px) {
+    .glass-card {
+      padding: 1rem;
+    }
+
+    .calendar-day {
+      font-size: 0.9rem;
+    }
+
+    .calendar-header {
+      font-size: 0.9rem;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+    }
+
+    h2 {
+      font-size: 1.25rem;
+    }
+
+    input {
+      padding: 0.6rem;
+      font-size: 0.9rem;
+    }
+
+    .stats-container {
+      gap: 1rem;
+    }
+  }
