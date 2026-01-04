@@ -12,9 +12,30 @@ export const AppProvider = ({ children }) => {
 
     // Settings
     // Settings
-    const [hourlyRate, setHourlyRate] = useState(100);
-    const [dailyHours, setDailyHours] = useState(8);
-    const [tdsPercentage, setTdsPercentage] = useState(0);
+    const [hourlyRate, setHourlyRate] = useState(() => {
+        const saved = localStorage.getItem('hourlyRate');
+        return saved ? Number(saved) : '';
+    });
+    const [dailyHours, setDailyHours] = useState(() => {
+        const saved = localStorage.getItem('dailyHours');
+        return saved ? Number(saved) : '';
+    });
+    const [tdsPercentage, setTdsPercentage] = useState(() => {
+        const saved = localStorage.getItem('tdsPercentage');
+        return saved ? Number(saved) : '';
+    });
+
+    useEffect(() => {
+        localStorage.setItem('hourlyRate', hourlyRate);
+    }, [hourlyRate]);
+
+    useEffect(() => {
+        localStorage.setItem('dailyHours', dailyHours);
+    }, [dailyHours]);
+
+    useEffect(() => {
+        localStorage.setItem('tdsPercentage', tdsPercentage);
+    }, [tdsPercentage]);
 
     // Attendance: Set of strings "YYYY-MM-DD"
     const [markedDates, setMarkedDates] = useState(() => {
