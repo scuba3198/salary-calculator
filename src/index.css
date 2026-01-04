@@ -51,12 +51,18 @@
 
   .glass-card {
     background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow);
-    border-radius: 16px;
+    border-radius: 20px;
     padding: 1.5rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .glass-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.45);
   }
 
   /* Calendar Grid */
@@ -106,6 +112,7 @@
   .calendar-day.is-holiday {
     color: var(--danger);
     font-weight: bold;
+    text-shadow: 0 0 8px rgba(255, 118, 117, 0.4);
   }
 
   /* Ensure holiday color doesn't override active state text color which needs to be dark */

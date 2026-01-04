@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from './utils/supabase';
 import { getCurrentDate } from './utils/nepali-calendar';
+import { useDebounce } from './hooks/useDebounce';
+import { useRef } from 'react';
 
 const AppContext = createContext();
 
@@ -40,6 +42,12 @@ export function AppProvider({ children }) {
     // Auth
     const [user, setUser] = useState(null);
     const [loadingAuth, setLoadingAuth] = useState(true);
+    const isInitialLoad = useRef(true);
+
+    // Debounced values
+    const debouncedHourlyRate = useDebounce(hourlyRate, 1000);
+    const debouncedDailyHours = useDebounce(dailyHours, 1000);
+    const debouncedTdsPercentage = useDebounce(tdsPercentage, 1000);
 
     // --- Effects ---
 
@@ -57,19 +65,32 @@ export function AppProvider({ children }) {
 
     // 2. Auth Listener
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        const checkSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
             setUser(session?.user ?? null);
             if (session?.user) {
-                loadUserData(session.user.id);
+                await loadUserData(session.user.id);
             } else {
                 setLoadingAuth(false);
             }
-        });
+        };
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        checkSession();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'SIGNED_OUT') {
+                setUser(null);
+                setMarkedDates({});
+                setHourlyRate(0);
+                setDailyHours(8);
+                setTdsPercentage(1);
+                setLoadingAuth(false);
+                return;
+            }
+
             setUser(session?.user ?? null);
             if (session?.user) {
-                loadUserData(session.user.id);
+                await loadUserData(session.user.id);
             } else {
                 setLoadingAuth(false);
             }
@@ -89,10 +110,12 @@ export function AppProvider({ children }) {
                 .single();
 
             if (settings && !settingsError) {
+                isInitialLoad.current = true;
                 if (settings.hourly_rate !== null) setHourlyRate(Number(settings.hourly_rate));
                 if (settings.daily_hours !== null) setDailyHours(Number(settings.daily_hours));
                 if (settings.tds_percentage !== null) setTdsPercentage(Number(settings.tds_percentage));
                 if (settings.theme) setTheme(settings.theme);
+                setTimeout(() => { isInitialLoad.current = false; }, 2000); // Allow state to settle
             }
 
             const { data: attendance, error: attendanceError } = await supabase
@@ -117,19 +140,21 @@ export function AppProvider({ children }) {
         localStorage.setItem('metric_hourlyRate', hourlyRate);
         localStorage.setItem('metric_dailyHours', dailyHours);
         localStorage.setItem('metric_tdsPercentage', tdsPercentage);
+    }, [hourlyRate, dailyHours, tdsPercentage]);
 
-        if (user && !loadingAuth) {
+    useEffect(() => {
+        if (user && !loadingAuth && !isInitialLoad.current) {
             supabase.from('user_settings').upsert({
                 user_id: user.id,
-                hourly_rate: hourlyRate,
-                daily_hours: dailyHours,
-                tds_percentage: tdsPercentage,
+                hourly_rate: debouncedHourlyRate,
+                daily_hours: debouncedDailyHours,
+                tds_percentage: debouncedTdsPercentage,
                 updated_at: new Date()
             }).then(({ error }) => {
                 if (error) console.error('Error saving settings:', error);
             });
         }
-    }, [hourlyRate, dailyHours, tdsPercentage, user, loadingAuth]);
+    }, [debouncedHourlyRate, debouncedDailyHours, debouncedTdsPercentage, user, loadingAuth]);
 
     useEffect(() => {
         localStorage.setItem('metric_markedDates', JSON.stringify(markedDates));
@@ -168,8 +193,13 @@ export function AppProvider({ children }) {
         setTheme(prev => prev === 'dark' ? 'light' : 'dark');
     };
 
-    const resetData = () => {
-        if (window.confirm('Are you sure? This will clear all local data.')) {
+    const resetData = async () => {
+        if (window.confirm('Are you sure? This will clear all data and sign you out.')) {
+            try {
+                if (user) await supabase.auth.signOut();
+            } catch (err) {
+                console.error('Sign out error during reset:', err);
+            }
             setMarkedDates({});
             setHourlyRate(0);
             setDailyHours(8);

@@ -59,7 +59,7 @@ export const getNepaliMonthName = (monthIndex) => {
         "Baisakh", "Jestha", "Ashad", "Shrawan", "Bhadra", "Ashwin",
         "Kartik", "Mangsir", "Poush", "Magh", "Falgun", "Chaitra"
     ];
-    return months[monthIndex];
+    return months[monthIndex % 12];
 };
 
 export const getEnglishMonthName = (monthIndex) => {
