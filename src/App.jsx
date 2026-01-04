@@ -101,7 +101,7 @@ function AppContent() {
         color: 'var(--text-secondary)',
         borderTop: '1px solid var(--border)'
       }}>
-        Developed with <span role="img" aria-label="robot">🤖</span> by Mumukshu D.C
+        Made with <span role="img" aria-label="robot">🤖</span> by Mumukshu D.C
       </footer>
 
       {showAuth && !user && (
