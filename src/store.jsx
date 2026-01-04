@@ -217,6 +217,16 @@ export function AppProvider({ children }) {
         }
     };
 
+    const forceLogout = async () => {
+        try {
+            await supabase.auth.signOut();
+        } catch (err) {
+            console.error('Force logout error:', err);
+        }
+        localStorage.clear();
+        window.location.reload();
+    };
+
     // Calculation (Iterating over object keys)
     const getMonthlyStats = () => {
         let count = 0;
@@ -250,7 +260,7 @@ export function AppProvider({ children }) {
             dailyHours, setDailyHours,
             tdsPercentage, setTdsPercentage,
             markedDates, toggleDate, isMarked,
-            resetData,
+            resetData, forceLogout,
             user, loadingAuth, isSyncing,
             theme, toggleTheme,
             getMonthlyStats,

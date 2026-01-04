@@ -7,23 +7,21 @@ import { LogIn, LogOut, X, Sun, Moon } from 'lucide-react';
 import { supabase } from './utils/supabase';
 
 function AppContent() {
-  const { user, theme, toggleTheme } = useAppStore();
+  const { user, theme, toggleTheme, forceLogout } = useAppStore();
   const [showAuth, setShowAuth] = useState(false);
 
   const handleLogout = async () => {
     try {
-      // Clear local showAuth state first
       setShowAuth(false);
-
-      // Explicitly sign out from Supabase
+      // Clean signout
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-
-      // Force a small reload if things get stuck, or rely on store listener
-      console.log('Logout successful');
+      if (error) {
+        console.warn('Stale session detected, forcing logout');
+        forceLogout();
+      }
     } catch (error) {
-      console.error('Logout failed:', error);
-      alert('Logout failed. Please try refreshing the page.');
+      console.error('Logout error:', error);
+      forceLogout();
     }
   };
 
