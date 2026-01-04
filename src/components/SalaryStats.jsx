@@ -47,7 +47,7 @@ const SalaryStats = () => {
                             type="number"
                             min="0"
                             max="100"
-                            value={tdsPercentage || ''}
+                            value={tdsPercentage ?? ''}
                             placeholder="0"
                             onChange={(e) => setTdsPercentage(e.target.value === '' ? '' : Number(e.target.value))}
                         />
