@@ -206,7 +206,10 @@ export function AppProvider({ children }) {
     };
 
     const deleteOrganization = async (id) => {
-        if (organizations.length <= 1) return; // Prevent deleting last one
+        if (organizations.length <= 1) {
+            alert("Cannot delete the only organization.");
+            return;
+        }
 
         const { error } = await supabase.from('organizations').delete().eq('id', id);
         if (!error) {
@@ -215,6 +218,9 @@ export function AppProvider({ children }) {
             if (currentOrgId === id) {
                 switchOrganization(newOrgs[0].id);
             }
+        } else {
+            console.error("Delete failed:", error);
+            alert("Failed to delete organization: " + error.message);
         }
     };
 
