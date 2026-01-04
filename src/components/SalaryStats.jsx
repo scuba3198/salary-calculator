@@ -26,7 +26,7 @@ const SalaryStats = () => {
                             type="number"
                             min="0"
                             value={hourlyRate}
-                            onChange={(e) => setHourlyRate(Number(e.target.value))}
+                            onChange={(e) => setHourlyRate(e.target.value === '' ? '' : Number(e.target.value))}
                         />
                     </div>
                     <div>
@@ -36,7 +36,7 @@ const SalaryStats = () => {
                             min="0"
                             max="24"
                             value={dailyHours}
-                            onChange={(e) => setDailyHours(Number(e.target.value))}
+                            onChange={(e) => setDailyHours(e.target.value === '' ? '' : Number(e.target.value))}
                         />
                     </div>
                     <div>
@@ -46,7 +46,7 @@ const SalaryStats = () => {
                             min="0"
                             max="100"
                             value={tdsPercentage}
-                            onChange={(e) => setTdsPercentage(Number(e.target.value))}
+                            onChange={(e) => setTdsPercentage(e.target.value === '' ? '' : Number(e.target.value))}
                         />
                     </div>
                 </div>
