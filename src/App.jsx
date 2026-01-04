@@ -11,7 +11,12 @@ function AppContent() {
   const [showAuth, setShowAuth] = useState(false);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    try {
+      setShowAuth(false);
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   return (
