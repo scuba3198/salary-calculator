@@ -29,7 +29,14 @@ function AppContent() {
 
   return (
     <div className="app-container" style={{ position: 'relative' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      {!user && (
+        <div style={{
+          background: 'var(--accent-color)', color: 'white', padding: '0.5rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: '500'
+        }}>
+          Guest Mode: Data is unsaved and will be lost on refresh. Login to save your progress.
+        </div>
+      )}
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', marginTop: !user ? '1rem' : '0' }}>
         <div>
           <h1>Nepali Salary Calculator</h1>
           <p>Track your work days and calculate your monthly earnings.</p>
@@ -44,25 +51,27 @@ function AppContent() {
             {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
           </button>
 
-          {user ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div style={{ textAlign: 'right' }}>
-                <span style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold' }}>
-                  {user.user_metadata?.full_name || 'User'}
-                </span>
-                {currentOrg && (
-                  <button
-                    onClick={() => setShowOrgManager(true)}
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.25rem',
-                      fontSize: '0.75rem', color: 'var(--accent-color)', background: 'none', border: 'none',
-                      cursor: 'pointer', padding: 0
-                    }}
-                  >
-                    <Briefcase size={12} /> {currentOrg.name}
-                  </button>
-                )}
-              </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ textAlign: 'right' }}>
+              <span style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold' }}>
+                {user?.user_metadata?.full_name || (user ? 'User' : 'Guest User')}
+              </span>
+              {currentOrg && (
+                <button
+                  onClick={() => setShowOrgManager(true)}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.25rem',
+                    fontSize: '0.75rem', color: 'var(--accent-color)', background: 'none', border: 'none',
+                    cursor: 'pointer', padding: 0
+                  }}
+                >
+                  <Briefcase size={12} /> {currentOrg.name}
+                  {!user && <span style={{ marginLeft: '4px', opacity: 0.7 }}>(Draft)</span>}
+                </button>
+              )}
+            </div>
+
+            {user ? (
               <button
                 onClick={handleLogout}
                 className="icon-btn"
@@ -71,20 +80,20 @@ function AppContent() {
               >
                 <LogOut size={20} />
               </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowAuth(true)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '0.5rem',
-                padding: '0.5rem 1rem', borderRadius: '0.5rem',
-                border: 'none', background: 'var(--primary)', color: 'white',
-                cursor: 'pointer', fontWeight: '500'
-              }}
-            >
-              <LogIn size={18} /> Login
-            </button>
-          )}
+            ) : (
+              <button
+                onClick={() => setShowAuth(true)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  padding: '0.5rem 1rem', borderRadius: '0.5rem',
+                  border: 'none', background: 'var(--primary)', color: 'white',
+                  cursor: 'pointer', fontWeight: '500'
+                }}
+              >
+                <LogIn size={18} /> Login
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -125,7 +134,7 @@ function AppContent() {
         </div>
       )}
 
-      {showOrgManager && user && (
+      {showOrgManager && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(0,0,0,0.5)', zIndex: 1000,
