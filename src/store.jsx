@@ -154,6 +154,10 @@ export function AppProvider({ children }) {
         }
     };
 
+    const toggleTheme = () => {
+        setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+    };
+
     // --- Actions ---
 
     const switchOrganization = async (orgId) => {
