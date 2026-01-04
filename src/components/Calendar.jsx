@@ -7,7 +7,8 @@ const Calendar = () => {
     const {
         viewYear, setViewYear,
         viewMonth, setViewMonth,
-        toggleDate, isMarked, currentDate
+        toggleDate, isMarked, currentDate,
+        isSyncing
     } = useAppStore();
 
     const { startWeekday, daysInMonth } = getMonthDays(viewYear, viewMonth);
@@ -60,7 +61,10 @@ const Calendar = () => {
         <div className="glass-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <button onClick={handlePrev}><ChevronLeft /></button>
-                <h2>{getNepaliMonthName(viewMonth)} {viewYear}</h2>
+                <h2>
+                    {getNepaliMonthName(viewMonth)} {viewYear}
+                    {isSyncing && <span style={{ fontSize: '0.8rem', marginLeft: '1rem', color: 'var(--accent-color)', fontWeight: 'normal' }}>Syncing...</span>}
+                </h2>
                 <button onClick={handleNext}><ChevronRight /></button>
             </div>
 

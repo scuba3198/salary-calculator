@@ -39,10 +39,11 @@ export function AppProvider({ children }) {
         return saved ? JSON.parse(saved) : {};
     });
 
-    // Auth
+    // Auth & Sync State
     const [user, setUser] = useState(null);
     const [loadingAuth, setLoadingAuth] = useState(true);
-    const isInitialLoad = useRef(true);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const hasLoadedFromRemote = useRef(false);
 
     // Debounced values
     const debouncedHourlyRate = useDebounce(hourlyRate, 1000);
@@ -56,7 +57,7 @@ export function AppProvider({ children }) {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('app_theme', theme);
 
-        if (user) {
+        if (user && hasLoadedFromRemote.current) {
             supabase.from('user_settings').update({ theme }).eq('user_id', user.id).then(({ error }) => {
                 if (error) console.error('Error syncing theme:', error);
             });
@@ -65,44 +66,50 @@ export function AppProvider({ children }) {
 
     // 2. Auth Listener
     useEffect(() => {
-        const checkSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                await loadUserData(session.user.id);
-            } else {
-                setLoadingAuth(false);
-            }
-        };
-
-        checkSession();
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            if (event === 'SIGNED_OUT') {
+        const handleAuthChange = async (session) => {
+            if (!session?.user) {
                 setUser(null);
                 setMarkedDates({});
                 setHourlyRate(0);
                 setDailyHours(8);
                 setTdsPercentage(1);
                 setLoadingAuth(false);
+                hasLoadedFromRemote.current = false;
                 return;
             }
 
-            setUser(session?.user ?? null);
-            if (session?.user) {
+            const isNewUser = user?.id !== session.user.id;
+            setUser(session.user);
+
+            if (isNewUser || !hasLoadedFromRemote.current) {
                 await loadUserData(session.user.id);
-            } else {
-                setLoadingAuth(false);
+            }
+        };
+
+        // Initial check
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            handleAuthChange(session);
+        });
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('Auth event:', event);
+            if (event === 'SIGNED_OUT') {
+                handleAuthChange(null);
+            } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+                handleAuthChange(session);
             }
         });
 
         return () => subscription.unsubscribe();
-    }, []);
+    }, [user?.id]);
 
     // 3. User Data Handler
     const loadUserData = async (userId) => {
         try {
+            setIsSyncing(true);
             setLoadingAuth(true);
+
+            // 1. Load Settings
             const { data: settings, error: settingsError } = await supabase
                 .from('user_settings')
                 .select('*')
@@ -110,14 +117,14 @@ export function AppProvider({ children }) {
                 .single();
 
             if (settings && !settingsError) {
-                isInitialLoad.current = true;
+                // IMPORTANT: update state but don't trigger a re-sync back to server immediately
                 if (settings.hourly_rate !== null) setHourlyRate(Number(settings.hourly_rate));
                 if (settings.daily_hours !== null) setDailyHours(Number(settings.daily_hours));
                 if (settings.tds_percentage !== null) setTdsPercentage(Number(settings.tds_percentage));
                 if (settings.theme) setTheme(settings.theme);
-                setTimeout(() => { isInitialLoad.current = false; }, 2000); // Allow state to settle
             }
 
+            // 2. Load Attendance
             const { data: attendance, error: attendanceError } = await supabase
                 .from('attendance')
                 .select('date_str')
@@ -128,22 +135,27 @@ export function AppProvider({ children }) {
                 attendance.forEach(row => dates[row.date_str] = true);
                 setMarkedDates(dates);
             }
+
+            hasLoadedFromRemote.current = true;
         } catch (err) {
             console.error('Error loading user data:', err);
         } finally {
             setLoadingAuth(false);
+            setIsSyncing(false);
         }
     };
 
-    // 4. Persistence
+    // 4. Persistence to Local
     useEffect(() => {
         localStorage.setItem('metric_hourlyRate', hourlyRate);
         localStorage.setItem('metric_dailyHours', dailyHours);
         localStorage.setItem('metric_tdsPercentage', tdsPercentage);
-    }, [hourlyRate, dailyHours, tdsPercentage]);
+        localStorage.setItem('metric_markedDates', JSON.stringify(markedDates));
+    }, [hourlyRate, dailyHours, tdsPercentage, markedDates]);
 
+    // 5. Sync settings to Remote (Only AFTER first load)
     useEffect(() => {
-        if (user && !loadingAuth && !isInitialLoad.current) {
+        if (user && hasLoadedFromRemote.current && !loadingAuth && !isSyncing) {
             supabase.from('user_settings').upsert({
                 user_id: user.id,
                 hourly_rate: debouncedHourlyRate,
@@ -154,11 +166,7 @@ export function AppProvider({ children }) {
                 if (error) console.error('Error saving settings:', error);
             });
         }
-    }, [debouncedHourlyRate, debouncedDailyHours, debouncedTdsPercentage, user, loadingAuth]);
-
-    useEffect(() => {
-        localStorage.setItem('metric_markedDates', JSON.stringify(markedDates));
-    }, [markedDates]);
+    }, [debouncedHourlyRate, debouncedDailyHours, debouncedTdsPercentage, user, loadingAuth, isSyncing]);
 
 
     // --- Actions ---
@@ -243,7 +251,7 @@ export function AppProvider({ children }) {
             tdsPercentage, setTdsPercentage,
             markedDates, toggleDate, isMarked,
             resetData,
-            user, loadingAuth,
+            user, loadingAuth, isSyncing,
             theme, toggleTheme,
             getMonthlyStats,
             currentDate: current

@@ -12,10 +12,18 @@ function AppContent() {
 
   const handleLogout = async () => {
     try {
+      // Clear local showAuth state first
       setShowAuth(false);
-      await supabase.auth.signOut();
+
+      // Explicitly sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      // Force a small reload if things get stuck, or rely on store listener
+      console.log('Logout successful');
     } catch (error) {
       console.error('Logout failed:', error);
+      alert('Logout failed. Please try refreshing the page.');
     }
   };
 

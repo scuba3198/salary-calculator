@@ -148,6 +148,29 @@
   }
 
   /* Utils */
+  .icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    cursor: pointer;
+    color: var(--text-primary);
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  .icon-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+    border-color: var(--accent-color);
+  }
+
+  .icon-btn:active {
+    transform: translateY(0);
+  }
+
   .flex-center {
     display: flex;
     justify-content: center;
