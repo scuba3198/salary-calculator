@@ -128,3 +128,35 @@ input:focus {
 .text-xl {
   font-size: 1.25rem;
 }
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .glass-card {
+    padding: 1rem;
+  }
+
+  .calendar-day {
+    font-size: 0.9rem;
+  }
+
+  .calendar-header {
+    font-size: 0.9rem;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+  }
+
+  input {
+    padding: 0.6rem;
+    font-size: 0.9rem;
+  }
+
+  .stats-container {
+    gap: 1rem;
+  }
+}
