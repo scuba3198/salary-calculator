@@ -5,10 +5,23 @@ import { getCurrentDate } from './utils/nepali-calendar';
 const AppContext = createContext();
 
 export function AppProvider({ children }) {
-    // Default to current Nepali Date (for Calendar View)
-    const current = getCurrentDate();
+    // Current Nepali Date (Auto-updates)
+    const [current, setCurrent] = useState(getCurrentDate());
     const [viewYear, setViewYear] = useState(current.year);
     const [viewMonth, setViewMonth] = useState(current.month);
+
+    useEffect(() => {
+        // Check for date change every minute
+        const timer = setInterval(() => {
+            const now = getCurrentDate();
+            if (now.year !== current.year || now.month !== current.month || now.day !== current.day) {
+                setCurrent(now);
+                // Optional: Auto-switch view if in current month view? 
+                // Let's keep view stable to avoiding jarring jumps, just update standard "today" indicator.
+            }
+        }, 60000);
+        return () => clearInterval(timer);
+    }, [current]);
 
     // Settings
     const [hourlyRate, setHourlyRate] = useState(() => Number(localStorage.getItem('metric_hourlyRate')) || 0);
