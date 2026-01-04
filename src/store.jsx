@@ -363,7 +363,7 @@ export function AppProvider({ children }) {
         });
 
         const rate = Number(currentOrg?.hourly_rate || 0);
-        const hours = Number(currentOrg?.daily_hours || 8);
+        const hours = Number(currentOrg?.daily_hours ?? 8);
         const tds = Number(currentOrg?.tds_percentage || 0);
 
         const grossSalary = count * hours * rate;
@@ -380,7 +380,7 @@ export function AppProvider({ children }) {
 
             // Exposed Props
             hourlyRate: currentOrg?.hourly_rate || 0, setHourlyRate,
-            dailyHours: currentOrg?.daily_hours || 8, setDailyHours,
+            dailyHours: currentOrg?.daily_hours ?? 8, setDailyHours,
             tdsPercentage: currentOrg?.tds_percentage ?? 1, setTdsPercentage,
 
             markedDates, toggleDate, isMarked,

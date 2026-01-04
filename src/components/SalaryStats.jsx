@@ -38,7 +38,7 @@ const SalaryStats = () => {
                             max="24"
                             value={dailyHours || ''}
                             placeholder="0"
-                            onChange={(e) => setDailyHours(e.target.value === '' ? '' : Number(e.target.value))}
+                            onChange={(e) => setDailyHours(e.target.value === '' ? 0 : Number(e.target.value))}
                         />
                     </div>
                     <div>
