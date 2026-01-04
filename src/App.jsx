@@ -93,6 +93,17 @@ function AppContent() {
         <SalaryStats />
       </div>
 
+      <footer style={{
+        marginTop: '3rem',
+        padding: '1rem',
+        textAlign: 'center',
+        fontSize: '0.875rem',
+        color: 'var(--text-secondary)',
+        borderTop: '1px solid var(--border)'
+      }}>
+        Developed with <span role="img" aria-label="robot">🤖</span> by Mumukshu D.C
+      </footer>
+
       {showAuth && !user && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
