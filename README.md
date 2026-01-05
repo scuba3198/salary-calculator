@@ -1,102 +1,120 @@
-# Nepali Salary Calculator
+# 🇳🇵 Nepali Salary Calculator
 
-A modern, responsive React application designed to help users track their workdays and calculate monthly earnings with ease. Built with React, Vite, and Supabase, this tool features an intuitive calendar interface, organization management, and real-time salary statistics.
+[![Deploy to GitHub Pages](https://github.com/scuba3198/salary-calculator/actions/workflows/deploy.yml/badge.svg)](https://github.com/scuba3198/salary-calculator/actions/workflows/deploy.yml)
+[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen)](https://scuba3198.github.io/salary-calculator)
 
-## ✨ Features
+A premium, modern, and responsive React application designed for the Nepali workforce. Track workdays, calculate monthly earnings, and manage multiple workspaces with ease using the Nepali (Bikram Sambat) calendar system.
 
-- **Authentication**: Secure user login and signup powered by Supabase Auth.
-- **Organization Management**: Create, join, and switch between different organizations or workspaces.
-- **Interactive Calendar**:
-  - Visual calendar based on the Nepali date system using `nepali-date-converter`.
-  - Mark/unmark workdays directly on the calendar.
-  - Visual indicators for weekends and holidays.
-- **Salary Statistics**:
-  - Real-time calculation of monthly earnings.
-  - Track total days worked, holidays, and payable amount.
-- **Responsive Design**: Fully optimized for desktop, tablet, and mobile devices.
-- **Theme Support**: Seamless toggle between Light and Dark modes.
+---
+
+## 🔗 [Visit Live Application](https://scuba3198.github.io/salary-calculator)
+
+---
+
+## ✨ Key Features
+
+### 🛡️ Smart Authentication & Guest Mode
+*   **Transient Guest Mode**: Jump right in! Use the "Draft Workspace" without an account. Your data is stored ephemerally so you can test calculations instantly.
+*   **Seamless Merge-on-Login**: Start as a guest, then sign up later. All your guest data—including marked workdays and organization settings—automatically merges into your new account upon your first login.
+*   **Secure Supabase Auth**: Industrial-grade security for your data once you're ready to commit.
+
+### 🏢 Multi-Workspace Management
+*   **Independent Settings**: Create multiple organizations or project workspaces.
+*   **Custom Rates**: Set unique hourly rates, daily working hours, and TDS (Tax Deducted at Source) percentages for each organization.
+*   **Workspace Switching**: Toggle between different jobs or freelance projects in one click.
+
+### 📅 Nepali Calendar System
+*   **Native Date Handling**: Built specifically for the Nepali context using the `nepali-date-converter`.
+*   **Interactive Interface**: Simply tap or click dates to mark attendance.
+*   **Visual Indicators**: Clear distinctions between regular days, weekends, and holidays.
+
+### 📊 Real-time Statistics
+*   **Instant Calculation**: Watch your gross and net salary update live as you mark days.
+*   **Tax Breakdown**: Automatic TDS calculation based on your workspace settings.
+*   **Monthly Overview**: Track total days worked and total hours for any given month.
+
+---
+
+## 🎨 Design Philosophy
+*   **Glassmorphism & Vibrancy**: A sleek UI with glass-like surfaces and vibrant accents.
+*   **Dark Mode Native**: A premium dark theme enabled by default, with an elegant light mode alternative.
+*   **Micro-animations**: Subtle transitions and hover effects using Vanilla CSS for a lightweight, "alive" feel.
+*   **Responsive First**: Perfectly optimized for everything from ultra-wide monitors to mobile screens.
+
+---
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: [React 19](https://react.dev/)
-- **Build Tool**: [Vite](https://vitejs.dev/)
-- **Backend/Database**: [Supabase](https://supabase.com/) (Auth & Postgres Database)
-- **Styling**: Vanilla CSS (with CSS variables for theming)
-- **Icons**: [Lucide React](https://lucide.dev/)
-- **Date Handling**: `nepali-date-converter`
+*   **Frontend**: [React 19](https://react.dev/)
+*   **Build Tool**: [Vite 7](https://vite.dev/)
+*   **Database & Auth**: [Supabase](https://supabase.com/)
+*   **Styling**: Vanilla CSS (Modern CSS Variables & Flex/Grid)
+*   **Icons**: [Lucide React](https://lucide.dev/)
+*   **Date Logic**: `nepali-date-converter`
+
+---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-
-Ensure you have the following installed on your local machine:
-- [Node.js](https://nodejs.org/) (Version 16 or higher recommended)
-- [npm](https://www.npmjs.com/) (usually comes with Node.js)
+*   [Node.js](https://nodejs.org/) (v20+ recommended)
+*   [npm](https://www.npmjs.com/)
 
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/scuba3198/salary-calculator.git
-   cd salary-calculator
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-### Configuration
-
-The application authenticates with a Supabase backend and requires environment variables to function securely.
-
-1.  **Create a `.env` file** in the root directory. You can use the provided example as a template:
+1.  **Clone & Enter**
     ```bash
-    cp .env.example .env
+    git clone https://github.com/scuba3198/salary-calculator.git
+    cd salary-calculator
     ```
 
-2.  **Add your Supabase credentials** to the `.env` file:
+2.  **Install Dependencies**
+    ```bash
+    npm install
+    ```
+
+3.  **Environment Setup**
+    Create a `.env` file in the root:
     ```env
-    VITE_SUPABASE_URL=your_supabase_project_url
-    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+    VITE_SUPABASE_URL=your_project_url
+    VITE_SUPABASE_ANON_KEY=your_anon_key
     ```
-    > **Note:** Never commit your actual `.env` file to version control. The `.env.example` file is safe to commit.
+    *(See `.env.example` for reference)*
 
-### Running the Application
+4.  **Launch Development Server**
+    ```bash
+    npm run dev
+    ```
 
-Start the development server:
-
-```bash
-npm run dev
-```
-
-The application will be available at `http://localhost:5173` (or the port shown in your terminal).
+---
 
 ## 📜 Scripts
 
-- `npm run dev`: Starts the development server with HMR.
-- `npm run build`: Builds the application for production.
-- `npm run lint`: Runs ESLint to check for code quality issues.
-- `npm run preview`: Locally previews the production build.
+*   `npm run dev`: Start development server.
+*   `npm run build`: Production build.
+*   `npm run lint`: Linting check.
+*   `npm run preview`: Preview production build locally.
 
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is open source.
+---
 
 ## 🛡️ Security
+*   **Row Level Security (RLS)**: Your data is isolated at the database level.
+*   **Environment Safety**: Critical keys are never committed to version control.
+*   **Protected Routes**: Workspace actions are locked behind authentication for persistent data.
 
-This project takes security seriously:
-- **Environment Variables**: Sensitive keys are managed via `.env` files.
-- **Row Level Security (RLS)**: Database access is strictly controlled by Supabase RLS policies, ensuring users can only access their own data.
-- **Content Security Policy (CSP)**: Implemented to protect against XSS attacks.
+---
 
+## 🤝 Contributing
+Contributions are welcome!
+1. Fork the repo.
+2. Create your feature branch (`git checkout -b feature/NewFeature`).
+3. Commit changes (`git commit -m 'Add NewFeature'`).
+4. Push to the branch (`git push origin feature/NewFeature`).
+5. Open a Pull Request.
+
+---
+
+## 📄 License
+This project is open-source and available under the MIT License.
+
+*Made with ❤️ by Mumukshu D.C*
