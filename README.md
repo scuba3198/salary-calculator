@@ -1,120 +1,110 @@
+<div align="center">
+
 # 🇳🇵 Nepali Salary Calculator
+### *The premium workspace for the Nepali workforce.*
 
 [![Deploy to GitHub Pages](https://github.com/scuba3198/salary-calculator/actions/workflows/deploy.yml/badge.svg)](https://github.com/scuba3198/salary-calculator/actions/workflows/deploy.yml)
-[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen)](https://scuba3198.github.io/salary-calculator)
+[![Live Demo](https://img.shields.io/badge/🚀%20Live-Demo-6366f1)](https://scuba3198.github.io/salary-calculator)
+[![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![Vite 7](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
+[![Supabase](https://img.shields.io/badge/Supabase-Auth%20%26%20DB-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
 
-A premium, modern, and responsive React application designed for the Nepali workforce. Track workdays, calculate monthly earnings, and manage multiple workspaces with ease using the Nepali (Bikram Sambat) calendar system.
+<br />
 
----
+<img src="./public/assets/screenshot-dark.png" alt="Nepali Salary Calculator Hero" width="800" style="border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.3);" />
 
-## 🔗 [Visit Live Application](https://scuba3198.github.io/salary-calculator)
+<br />
 
----
-
-## ✨ Key Features
-
-### 🛡️ Smart Authentication & Guest Mode
-*   **Transient Guest Mode**: Jump right in! Use the "Draft Workspace" without an account. Your data is stored ephemerally so you can test calculations instantly.
-*   **Seamless Merge-on-Login**: Start as a guest, then sign up later. All your guest data—including marked workdays and organization settings—automatically merges into your new account upon your first login.
-*   **Secure Supabase Auth**: Industrial-grade security for your data once you're ready to commit.
-
-### 🏢 Multi-Workspace Management
-*   **Independent Settings**: Create multiple organizations or project workspaces.
-*   **Custom Rates**: Set unique hourly rates, daily working hours, and TDS (Tax Deducted at Source) percentages for each organization.
-*   **Workspace Switching**: Toggle between different jobs or freelance projects in one click.
-
-### 📅 Nepali Calendar System
-*   **Native Date Handling**: Built specifically for the Nepali context using the `nepali-date-converter`.
-*   **Interactive Interface**: Simply tap or click dates to mark attendance.
-*   **Visual Indicators**: Clear distinctions between regular days, weekends, and holidays.
-
-### 📊 Real-time Statistics
-*   **Instant Calculation**: Watch your gross and net salary update live as you mark days.
-*   **Tax Breakdown**: Automatic TDS calculation based on your workspace settings.
-*   **Monthly Overview**: Track total days worked and total hours for any given month.
+**[Experience the App Live](https://scuba3198.github.io/salary-calculator)**
 
 ---
 
-## 🎨 Design Philosophy
-*   **Glassmorphism & Vibrancy**: A sleek UI with glass-like surfaces and vibrant accents.
-*   **Dark Mode Native**: A premium dark theme enabled by default, with an elegant light mode alternative.
-*   **Micro-animations**: Subtle transitions and hover effects using Vanilla CSS for a lightweight, "alive" feel.
-*   **Responsive First**: Perfectly optimized for everything from ultra-wide monitors to mobile screens.
+<p align="left">
+Modern, fast, and feature-rich. The <b>Nepali Salary Calculator</b> is designed to solve the complexity of tracking workdays across multiple organizations using the native <b>Bikram Sambat (B.S.)</b> calendar. Whether you're a freelancer, a full-time employee, or managing a team, this tool provides real-time financial clarity.
+</p>
+
+</div>
 
 ---
 
-## 🛠️ Tech Stack
+## 💎 Visual Showcase
 
-*   **Frontend**: [React 19](https://react.dev/)
-*   **Build Tool**: [Vite 7](https://vite.dev/)
-*   **Database & Auth**: [Supabase](https://supabase.com/)
-*   **Styling**: Vanilla CSS (Modern CSS Variables & Flex/Grid)
-*   **Icons**: [Lucide React](https://lucide.dev/)
-*   **Date Logic**: `nepali-date-converter`
+| Light Mode Interface | Dark Mode Interface |
+| :---: | :---: |
+| <img src="./public/assets/screenshot-light.png" width="400" style="border-radius: 8px;" /> | <img src="./public/assets/screenshot-dark.png" width="400" style="border-radius: 8px;" /> |
 
 ---
 
-## 🚀 Getting Started
+## ✨ Premium Features
 
-### Prerequisites
-*   [Node.js](https://nodejs.org/) (v20+ recommended)
-*   [npm](https://www.npmjs.com/)
+### 🛡️ Smart Guest Protocol
+> **No account? No problem.**
+*   **Instant Access**: Use the full suite of tools immediately via "Transient Guest Mode".
+*   **Persistent Drafts**: Your settings and dates are safely stored in your browser while you test.
+*   **Merge Catalyst**: When you're ready to create an account, one click merges all your local guest data into the cloud. **Zero data loss.**
 
-### Installation
+### 🏢 Elite Workspace Management
+*   **Unlimited Organizations**: Manage concurrent jobs or clients in separate silos.
+*   **Granular Economics**: Fine-tune hourly rates (Rs), daily hours, and TDS (%) per workspace.
+*   **Switching Engine**: A lightning-fast interface to jump between organizations.
 
-1.  **Clone & Enter**
-    ```bash
-    git clone https://github.com/scuba3198/salary-calculator.git
-    cd salary-calculator
-    ```
+### 🇳🇵 Native Calendar Precision
+*   **Pure Nepali Experience**: Fully integrated B.S. calendar system.
+*   **Holiday & Weekend Intel**: Automatic visual cues for non-working days.
+*   **Intuitive Marking**: A "tap-to-log" system that makes tracking feel like a breeze.
 
-2.  **Install Dependencies**
-    ```bash
-    npm install
-    ```
-
-3.  **Environment Setup**
-    Create a `.env` file in the root:
-    ```env
-    VITE_SUPABASE_URL=your_project_url
-    VITE_SUPABASE_ANON_KEY=your_anon_key
-    ```
-    *(See `.env.example` for reference)*
-
-4.  **Launch Development Server**
-    ```bash
-    npm run dev
-    ```
+### 📊 Financial Command Center
+*   **Live Gross/Net Logic**: Real-time salary projection as you toggle dates.
+*   **TDS Automation**: Accurate tax deductions calculated instantly based on individual workspace laws.
+*   **Historical Accuracy**: View and verify stats for any month or year.
 
 ---
 
-## 📜 Scripts
+## 🛠️ The Technology Core
 
-*   `npm run dev`: Start development server.
-*   `npm run build`: Production build.
-*   `npm run lint`: Linting check.
-*   `npm run preview`: Preview production build locally.
+The application is built on a "Lean-Core" architecture, ensuring maximum performance without bloated dependencies.
 
----
-
-## 🛡️ Security
-*   **Row Level Security (RLS)**: Your data is isolated at the database level.
-*   **Environment Safety**: Critical keys are never committed to version control.
-*   **Protected Routes**: Workspace actions are locked behind authentication for persistent data.
+| Technology | Purpose |
+| :--- | :--- |
+| **React 19** | Modern UI primitives and state synchronization. |
+| **Vite 7** | Next-generation build tool for instant HMR. |
+| **Supabase** | Hybrid PostgreSQL & Real-time Auth backbone. |
+| **Vanilla CSS** | Pure, hand-optimized styles for a "Glassmorphism" look. |
+| **JS-B.S.** | High-precision Nepali date conversion logic. |
 
 ---
 
-## 🤝 Contributing
-Contributions are welcome!
-1. Fork the repo.
-2. Create your feature branch (`git checkout -b feature/NewFeature`).
-3. Commit changes (`git commit -m 'Add NewFeature'`).
-4. Push to the branch (`git push origin feature/NewFeature`).
-5. Open a Pull Request.
+## 🚀 Speed Start
+
+### 1. Zero-Config Install
+```bash
+git clone https://github.com/scuba3198/salary-calculator.git
+cd salary-calculator
+npm install
+```
+
+### 2. Pulse Check (Local Dev)
+```bash
+npm run dev
+```
+
+### 3. Production Hardening
+```bash
+npm run build
+npm run preview
+```
 
 ---
 
-## 📄 License
-This project is open-source and available under the MIT License.
+## 📜 Repository Health
 
-*Made with ❤️ by Mumukshu D.C*
+- `npm run lint`: Maintain industrial-standard code quality.
+- `deploy.yml`: Automated CI/CD pipeline targeting GitHub Pages.
+
+---
+
+<div align="center">
+  <sub>Built with ❤️ by <a href="https://github.com/scuba3198">Mumukshu D.C</a></sub>
+  <br />
+  <sub>&copy; 2026 Salary Calculator. All rights reserved.</sub>
+</div>
