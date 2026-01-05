@@ -58,7 +58,8 @@ const SalaryStats = () => {
                             min="0"
                             value={hourlyRate || ''}
                             placeholder="0"
-                            onChange={(e) => setHourlyRate(e.target.value === '' ? '' : Number(e.target.value))}
+                            onKeyDown={(e) => ["-", "e", "E"].includes(e.key) && e.preventDefault()}
+                            onChange={(e) => setHourlyRate(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))}
                         />
                     </div>
                     <div>
@@ -69,7 +70,8 @@ const SalaryStats = () => {
                             max="24"
                             value={dailyHours || ''}
                             placeholder="0"
-                            onChange={(e) => setDailyHours(e.target.value === '' ? 0 : Number(e.target.value))}
+                            onKeyDown={(e) => ["-", "e", "E"].includes(e.key) && e.preventDefault()}
+                            onChange={(e) => setDailyHours(e.target.value === '' ? 0 : Math.max(0, Math.min(24, Number(e.target.value))))}
                         />
                     </div>
                     <div>
@@ -80,7 +82,8 @@ const SalaryStats = () => {
                             max="100"
                             value={tdsPercentage ?? ''}
                             placeholder="0"
-                            onChange={(e) => setTdsPercentage(e.target.value === '' ? '' : Number(e.target.value))}
+                            onKeyDown={(e) => ["-", "e", "E"].includes(e.key) && e.preventDefault()}
+                            onChange={(e) => setTdsPercentage(e.target.value === '' ? '' : Math.max(0, Math.min(100, Number(e.target.value))))}
                         />
                     </div>
                 </div>

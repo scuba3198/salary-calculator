@@ -36,7 +36,7 @@ function AppContent() {
           Guest Mode: Data is unsaved and will be lost on refresh. Login to save your progress.
         </div>
       )}
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', marginTop: !user ? '1rem' : '0' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', marginTop: !user ? '1rem' : '0', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1>Nepali Salary Calculator</h1>
           <p>Track your work days and calculate your monthly earnings.</p>
