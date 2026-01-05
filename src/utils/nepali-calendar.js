@@ -41,7 +41,7 @@ export const getMonthDays = (year, month) => {
                 break;
             }
             daysInMonth = d;
-        } catch (e) {
+        } catch {
             break;
         }
     }

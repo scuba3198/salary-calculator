@@ -16,6 +16,37 @@ const SalaryStats = () => {
         <div className="stats-container">
             <div className="glass-card stat-box">
                 <div className="flex-center mb-4">
+                    <Banknote size={32} color="var(--success)" />
+                </div>
+                <h2>Monthly Total</h2>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div className="text-xl" style={{ color: 'var(--text-secondary)' }}>
+                        Total Days: <span style={{ color: 'var(--text-primary)' }}>{stats.daysWorked}</span>
+                    </div>
+                    <div className="text-xl" style={{ color: 'var(--text-secondary)' }}>
+                        Total Hours: <span style={{ color: 'var(--text-primary)' }}>{stats.totalHours}</span>
+                    </div>
+                    <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--glass-border)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
+                            <span>Gross:</span> <span>Rs. {stats.grossSalary.toLocaleString()}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--danger)' }}>
+                            <span>TDS ({tdsPercentage}%):</span> <span>- Rs. {stats.tdsAmount.toLocaleString()}</span>
+                        </div>
+                    </div>
+
+                    <div style={{ marginTop: '0.5rem', borderTop: '1px solid var(--glass-border)', paddingTop: '0.5rem' }}>
+                        <span style={{ fontSize: '3rem', fontWeight: 'bold', background: 'var(--success)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundImage: 'linear-gradient(135deg, #00b894 0%, #00cec9 100%)' }}>
+                            Rs. {stats.netSalary.toLocaleString()}
+                        </span>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Net Salary</div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="glass-card stat-box">
+                <div className="flex-center mb-4">
                     <Clock size={32} color="var(--accent-color)" />
                 </div>
                 <h2>Settings</h2>
@@ -51,37 +82,6 @@ const SalaryStats = () => {
                             placeholder="0"
                             onChange={(e) => setTdsPercentage(e.target.value === '' ? '' : Number(e.target.value))}
                         />
-                    </div>
-                </div>
-            </div>
-
-            <div className="glass-card stat-box">
-                <div className="flex-center mb-4">
-                    <Banknote size={32} color="var(--success)" />
-                </div>
-                <h2>Monthly Total</h2>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <div className="text-xl" style={{ color: 'var(--text-secondary)' }}>
-                        Total Days: <span style={{ color: 'var(--text-primary)' }}>{stats.daysWorked}</span>
-                    </div>
-                    <div className="text-xl" style={{ color: 'var(--text-secondary)' }}>
-                        Total Hours: <span style={{ color: 'var(--text-primary)' }}>{stats.totalHours}</span>
-                    </div>
-                    <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--glass-border)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
-                            <span>Gross:</span> <span>Rs. {stats.grossSalary.toLocaleString()}</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--danger)' }}>
-                            <span>TDS ({tdsPercentage}%):</span> <span>- Rs. {stats.tdsAmount.toLocaleString()}</span>
-                        </div>
-                    </div>
-
-                    <div style={{ marginTop: '0.5rem', borderTop: '1px solid var(--glass-border)', paddingTop: '0.5rem' }}>
-                        <span style={{ fontSize: '3rem', fontWeight: 'bold', background: 'var(--success)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundImage: 'linear-gradient(135deg, #00b894 0%, #00cec9 100%)' }}>
-                            Rs. {stats.netSalary.toLocaleString()}
-                        </span>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Net Salary</div>
                     </div>
                 </div>
             </div>

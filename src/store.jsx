@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { supabase } from './utils/supabase';
 import { getCurrentDate } from './utils/nepali-calendar';
-import { useDebounce } from './hooks/useDebounce';
+
 
 const AppContext = createContext();
 
@@ -349,7 +349,7 @@ export function AppProvider({ children }) {
     };
 
     const forceLogout = async () => {
-        try { await supabase.auth.signOut(); } catch (e) { }
+        try { await supabase.auth.signOut(); } catch { /* ignore */ }
         localStorage.clear();
         window.location.reload();
     };
@@ -358,7 +358,7 @@ export function AppProvider({ children }) {
     const getMonthlyStats = () => {
         let count = 0;
         Object.keys(markedDates).forEach(dateStr => {
-            const [y, m, d] = dateStr.split('-').map(Number);
+            const [y, m] = dateStr.split('-').map(Number);
             if (y === viewYear && m === viewMonth) count++;
         });
 
@@ -403,6 +403,7 @@ export function AppProvider({ children }) {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAppStore() {
     return useContext(AppContext);
 }

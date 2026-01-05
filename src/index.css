@@ -36,183 +36,184 @@
   --primary-light: rgba(108, 92, 231, 0.2);
   --background: rgba(0, 0, 0, 0.5);
   --text: var(--text-primary);
+}
 
-  body {
-    margin: 0;
-    font-family: 'Inter', sans-serif;
-    background: var(--bg-gradient);
-    color: var(--text-primary);
-    min-height: 100vh;
-  }
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-gradient);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
 
-  #root {
-    width: 100%;
-  }
+#root {
+  width: 100%;
+}
 
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: 20px;
+  padding: 1.5rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.45);
+}
+
+/* Calendar Grid */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.calendar-header {
+  font-weight: bold;
+  color: var(--accent-color);
+  padding-bottom: 0.5rem;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.calendar-day:hover:not(.disabled) {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.calendar-day.active {
+  background: var(--success);
+  color: #000;
+  font-weight: bold;
+  box-shadow: 0 0 10px var(--success);
+}
+
+.calendar-day.today {
+  border: 2px solid var(--accent-color);
+}
+
+.calendar-day.disabled {
+  cursor: default;
+}
+
+.calendar-day.is-holiday {
+  color: var(--danger);
+  font-weight: bold;
+  text-shadow: 0 0 8px rgba(255, 118, 117, 0.4);
+}
+
+/* Ensure holiday color doesn't override active state text color which needs to be dark */
+.calendar-day.active.is-holiday {
+  color: #000;
+}
+
+/* Stats */
+.stats-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.stat-box {
+  text-align: center;
+}
+
+input {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--text-primary);
+  margin-top: 0.5rem;
+  font-size: 1rem;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+/* Utils */
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  cursor: pointer;
+  color: var(--text-primary);
+  min-width: 40px;
+  min-height: 40px;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+  border-color: var(--accent-color);
+}
+
+.icon-btn:active {
+  transform: translateY(0);
+}
+
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
   .glass-card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow);
-    border-radius: 20px;
-    padding: 1.5rem;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-
-  .glass-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.45);
-  }
-
-  /* Calendar Grid */
-  .calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 0.5rem;
-    text-align: center;
-  }
-
-  .calendar-header {
-    font-weight: bold;
-    color: var(--accent-color);
-    padding-bottom: 0.5rem;
+    padding: 1rem;
   }
 
   .calendar-day {
-    aspect-ratio: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    user-select: none;
+    font-size: 0.9rem;
   }
 
-  .calendar-day:hover:not(.disabled) {
-    background: rgba(255, 255, 255, 0.2);
+  .calendar-header {
+    font-size: 0.9rem;
   }
 
-  .calendar-day.active {
-    background: var(--success);
-    color: #000;
-    font-weight: bold;
-    box-shadow: 0 0 10px var(--success);
+  h1 {
+    font-size: 1.75rem;
   }
 
-  .calendar-day.today {
-    border: 2px solid var(--accent-color);
-  }
-
-  .calendar-day.disabled {
-    cursor: default;
-  }
-
-  .calendar-day.is-holiday {
-    color: var(--danger);
-    font-weight: bold;
-    text-shadow: 0 0 8px rgba(255, 118, 117, 0.4);
-  }
-
-  /* Ensure holiday color doesn't override active state text color which needs to be dark */
-  .calendar-day.active.is-holiday {
-    color: #000;
-  }
-
-  /* Stats */
-  .stats-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-
-  .stat-box {
-    text-align: center;
-  }
-
-  input {
-    width: 100%;
-    padding: 0.75rem;
-    border-radius: 8px;
-    border: 1px solid var(--glass-border);
-    background: rgba(0, 0, 0, 0.2);
-    color: var(--text-primary);
-    margin-top: 0.5rem;
-    font-size: 1rem;
-  }
-
-  input:focus {
-    outline: none;
-    border-color: var(--accent-color);
-  }
-
-  /* Utils */
-  .icon-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    border: 1px solid var(--glass-border);
-    background: var(--glass-bg);
-    cursor: pointer;
-    color: var(--text-primary);
-    min-width: 40px;
-    min-height: 40px;
-  }
-
-  .icon-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateY(-1px);
-    border-color: var(--accent-color);
-  }
-
-  .icon-btn:active {
-    transform: translateY(0);
-  }
-
-  .flex-center {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .mb-4 {
-    margin-bottom: 1rem;
-  }
-
-  .text-xl {
+  h2 {
     font-size: 1.25rem;
   }
 
-  /* Mobile Responsiveness */
-  @media (max-width: 768px) {
-    .glass-card {
-      padding: 1rem;
-    }
-
-    .calendar-day {
-      font-size: 0.9rem;
-    }
-
-    .calendar-header {
-      font-size: 0.9rem;
-    }
-
-    h1 {
-      font-size: 1.75rem;
-    }
-
-    h2 {
-      font-size: 1.25rem;
-    }
-
-    input {
-      padding: 0.6rem;
-      font-size: 0.9rem;
-    }
-
-    .stats-container {
-      gap: 1rem;
-    }
+  input {
+    padding: 0.6rem;
+    font-size: 0.9rem;
   }
+
+  .stats-container {
+    gap: 1rem;
+  }
+}
