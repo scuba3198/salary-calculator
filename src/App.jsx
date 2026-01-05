@@ -97,7 +97,7 @@ function AppContent() {
         </div>
       </header>
 
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         <Calendar />
         <SalaryStats />
       </div>
