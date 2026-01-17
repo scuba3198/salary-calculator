@@ -117,7 +117,7 @@ function AppContent() {
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(0,0,0,0.5)', zIndex: 1000,
-          display: 'flex', justifyContent: 'center', alignItems: 'center', pading: '1rem'
+          display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem'
         }}>
           <div style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
             <button
