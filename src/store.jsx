@@ -2,32 +2,6 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { supabase } from './utils/supabase';
 import { getCurrentDate } from './utils/nepali-calendar';
 
-// Safe localStorage helpers with validation
-const safeGetItem = (key, fallback = null) => {
-    try {
-        const value = localStorage.getItem(key);
-        if (value === null) return fallback;
-        return value;
-    } catch {
-        return fallback;
-    }
-};
-
-const safeSetItem = (key, value) => {
-    try {
-        localStorage.setItem(key, value);
-    } catch (e) {
-        console.error('Failed to save to localStorage:', e);
-    }
-};
-
-// Validate daily hours (must be between 0 and 24)
-const validateDailyHours = (hours) => {
-    const num = Number(hours);
-    if (isNaN(num)) return 8;
-    return Math.max(0, Math.min(24, num));
-};
-
 
 const AppContext = createContext();
 
@@ -52,17 +26,17 @@ export function AppProvider({ children }) {
             }
         }, 60000);
         return () => clearInterval(timer);
-    }, []); // Empty deps - interval created once
+    }, []);
 
     // --- Multi-Org State ---
     const [organizations, setOrganizations] = useState([]);
-    const [currentOrgId, setCurrentOrgId] = useState(() => safeGetItem('last_org_id') || null);
+    const [currentOrgId, setCurrentOrgId] = useState(() => localStorage.getItem('last_org_id') || null);
 
     // Derived Current Org
     const currentOrg = organizations.find(o => o.id === currentOrgId) || organizations[0] || null;
 
     // Theme (Global)
-    const [theme, setTheme] = useState(() => safeGetItem('app_theme', 'dark') || 'dark');
+    const [theme, setTheme] = useState(() => localStorage.getItem('app_theme') || 'dark');
 
     // Attendance: { "YYYY-MM-DD": daily_hours } for CURRENT Org
     const [markedDates, setMarkedDates] = useState({});
@@ -75,14 +49,14 @@ export function AppProvider({ children }) {
 
     // Guest Mode: Track if we have unsaved guest data to merge
     const guestDataRef = useRef({ markedDates: {}, orgSettings: null });
-    const isGuestModeRef = useRef(false); // Track guest mode independently
+    const isGuestModeRef = useRef(false);
 
     // --- Effects ---
 
     // 1. Theme Effect
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
-        safeSetItem('app_theme', theme);
+        localStorage.setItem('app_theme', theme);
         if (user && hasLoadedFromRemote.current) {
             supabase.from('user_settings').upsert({ user_id: user.id, theme }, { onConflict: 'user_id' }).then(({ error }) => {
                 if (error) console.error('Error syncing theme:', error);
@@ -140,7 +114,7 @@ export function AppProvider({ children }) {
         });
 
         return () => subscription.unsubscribe();
-    }, []); // Empty deps - auth listener only mounts once
+    }, []);
 
     // 2.5. Sync guest data to ref when in guest mode
     useEffect(() => {
@@ -188,13 +162,13 @@ export function AppProvider({ children }) {
             } else {
                 // Existing user
                 // Determine active org
-                const savedId = safeGetItem('last_org_id');
+                const savedId = localStorage.getItem('last_org_id');
                 activeId = validOrgs.find(o => o.id === savedId)?.id || validOrgs[0]?.id;
             }
 
             setOrganizations(validOrgs);
             setCurrentOrgId(activeId);
-            if (activeId) safeSetItem('last_org_id', activeId);
+            if (activeId) localStorage.setItem('last_org_id', activeId);
 
             // Fetch Attendance for Active Org
             let remoteDates = {};
@@ -205,7 +179,7 @@ export function AppProvider({ children }) {
                     .eq('organization_id', activeId);
 
                 if (!error && attendance) {
-                    attendance.forEach(row => remoteDates[row.date_str] = validateDailyHours(row.daily_hours));
+                    attendance.forEach(row => remoteDates[row.date_str] = row.daily_hours ?? 8);
                 }
             }
 
@@ -253,7 +227,7 @@ export function AppProvider({ children }) {
 
         if (!error && attendance) {
             const dates = {};
-            attendance.forEach(row => dates[row.date_str] = validateDailyHours(row.daily_hours));
+            attendance.forEach(row => dates[row.date_str] = row.daily_hours ?? 8);
             setMarkedDates(dates);
         }
     };
@@ -268,7 +242,7 @@ export function AppProvider({ children }) {
         if (orgId === currentOrgId) return;
         setIsSyncing(true);
         setCurrentOrgId(orgId);
-        safeSetItem('last_org_id', orgId);
+        localStorage.setItem('last_org_id', orgId);
         setMarkedDates({}); // Clear transiently
         try {
             await fetchAttendance(orgId);
@@ -302,21 +276,15 @@ export function AppProvider({ children }) {
     };
 
     const updateOrganization = async (id, updates) => {
-        // Find previous state for potential rollback
-        const prevOrgs = organizations;
-        const prevOrg = prevOrgs.find(o => o.id === id);
-
         // Optimistic update
-        setOrganizations(prev => prev.map(o => o.id === id ? { ...o, ...updates } : o }));
+        setOrganizations(prev => prev.map(o => o.id === id ? { ...o, ...updates } : o));
 
         if (!user || id === 'guest') return; // Stop here for guests or guest org
 
+        // Debounce actual DB call if needed? For now, direct simple update.
         const { error } = await supabase.from('organizations').update(updates).eq('id', id);
         if (error) {
             console.error('Update failed', error);
-            // Rollback to previous state
-            setOrganizations(prevOrgs);
-            alert(`Failed to save changes: ${error.message}`);
         }
     };
 
@@ -364,8 +332,7 @@ export function AppProvider({ children }) {
     const toggleDate = async (year, month, day) => {
         if (!currentOrgId || isSyncing) return;
 
-        // Store month as 1-indexed (1=Baisakh, 12=Chaitra) for human readability
-        const dateKey = `${year}-${month + 1}-${day}`;
+        const dateKey = `${year}-${month}-${day}`;
         const newDates = { ...markedDates };
         const isAdding = !newDates[dateKey];
         const hoursToStore = currentOrg?.daily_hours ?? 8;
@@ -412,7 +379,7 @@ export function AppProvider({ children }) {
         }
     };
 
-    const isMarked = (year, month, day) => !!markedDates[`${year}-${month + 1}-${day}`];
+    const isMarked = (year, month, day) => !!markedDates[`${year}-${month}-${day}`];
 
     // Getters/Setters Compatibility for existing components
     // These update the CURRENT organization
@@ -448,8 +415,7 @@ export function AppProvider({ children }) {
         let totalHours = 0;
         Object.entries(markedDates).forEach(([dateStr, dayHours]) => {
             const [y, m] = dateStr.split('-').map(Number);
-            // date_str stores months as 1-indexed (1=Baisakh, 12=Chaitra)
-            if (y === viewYear && m === viewMonth + 1) {
+            if (y === viewYear && m === viewMonth) {
                 count++;
                 totalHours += Number(dayHours) || 0;
             }
