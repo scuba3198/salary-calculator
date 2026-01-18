@@ -332,7 +332,7 @@ export function AppProvider({ children }) {
     const toggleDate = async (year, month, day) => {
         if (!currentOrgId || isSyncing) return;
 
-        const dateKey = `${year}-${month}-${day}`;
+        const dateKey = `${year}-${month + 1}-${day}`;
         const newDates = { ...markedDates };
         const isAdding = !newDates[dateKey];
         const hoursToStore = currentOrg?.daily_hours ?? 8;
@@ -379,7 +379,7 @@ export function AppProvider({ children }) {
         }
     };
 
-    const isMarked = (year, month, day) => !!markedDates[`${year}-${month}-${day}`];
+    const isMarked = (year, month, day) => !!markedDates[`${year}-${month + 1}-${day}`];
 
     // Getters/Setters Compatibility for existing components
     // These update the CURRENT organization
@@ -415,7 +415,7 @@ export function AppProvider({ children }) {
         let totalHours = 0;
         Object.entries(markedDates).forEach(([dateStr, dayHours]) => {
             const [y, m] = dateStr.split('-').map(Number);
-            if (y === viewYear && m === viewMonth) {
+            if (y === viewYear && m === viewMonth + 1) {
                 count++;
                 totalHours += Number(dayHours) || 0;
             }
