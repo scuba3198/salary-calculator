@@ -31,7 +31,7 @@ export function AppProvider({ children }) {
     // Theme (Global)
     const [theme, setTheme] = useState(() => localStorage.getItem('app_theme') || 'dark');
 
-    // Attendance: { "YYYY-MM-DD": true } for CURRENT Org
+    // Attendance: { "YYYY-MM-DD": daily_hours } for CURRENT Org
     const [markedDates, setMarkedDates] = useState({});
 
     // Auth & Sync State
@@ -154,25 +154,26 @@ export function AppProvider({ children }) {
             if (activeId) {
                 const { data: attendance, error } = await supabase
                     .from('attendance')
-                    .select('date_str')
+                    .select('date_str, daily_hours')
                     .eq('organization_id', activeId);
 
                 if (!error && attendance) {
-                    attendance.forEach(row => remoteDates[row.date_str] = true);
+                    attendance.forEach(row => remoteDates[row.date_str] = row.daily_hours ?? 8);
                 }
             }
 
             // MERGE GUEST DATES
             if (dataToMerge?.dates && activeId) {
                 const datesToInsert = [];
-                Object.keys(dataToMerge.dates).forEach(dateStr => {
+                Object.entries(dataToMerge.dates).forEach(([dateStr, dayHours]) => {
                     if (!remoteDates[dateStr]) { // Only insert if not already present
                         datesToInsert.push({
                             user_id: userId,
                             organization_id: activeId,
-                            date_str: dateStr
+                            date_str: dateStr,
+                            daily_hours: dayHours
                         });
-                        remoteDates[dateStr] = true; // Update local view immediately
+                        remoteDates[dateStr] = dayHours; // Update local view immediately
                     }
                 });
 
@@ -200,12 +201,12 @@ export function AppProvider({ children }) {
     const fetchAttendance = async (orgId) => {
         const { data: attendance, error } = await supabase
             .from('attendance')
-            .select('date_str')
+            .select('date_str, daily_hours')
             .eq('organization_id', orgId);
 
         if (!error && attendance) {
             const dates = {};
-            attendance.forEach(row => dates[row.date_str] = true);
+            attendance.forEach(row => dates[row.date_str] = row.daily_hours ?? 8);
             setMarkedDates(dates);
         }
     };
@@ -295,31 +296,51 @@ export function AppProvider({ children }) {
 
     // Calendar Action
     const toggleDate = async (year, month, day) => {
-        if (!currentOrgId) return;
+        if (!currentOrgId || isSyncing) return;
 
         const dateKey = `${year}-${month}-${day}`;
         const newDates = { ...markedDates };
         const isAdding = !newDates[dateKey];
+        const hoursToStore = currentOrg?.daily_hours ?? 8;
 
-        if (isAdding) newDates[dateKey] = true;
-        else delete newDates[dateKey];
+        if (isAdding) {
+            // Store the current daily_hours setting when marking the date
+            newDates[dateKey] = hoursToStore;
+        } else {
+            delete newDates[dateKey];
+        }
 
         setMarkedDates(newDates);
 
         // Stop here if guest OR if org ID is the temporary 'guest' placeholder (race condition guard)
         if (!user || currentOrgId === 'guest') return;
 
-        if (isAdding) {
-            await supabase.from('attendance').insert({
-                user_id: user.id,
-                organization_id: currentOrgId,
-                date_str: dateKey
-            });
-        } else {
-            await supabase.from('attendance').delete().match({
-                user_id: user.id,
-                organization_id: currentOrgId,
-                date_str: dateKey
+        try {
+            if (isAdding) {
+                await supabase.from('attendance').insert({
+                    user_id: user.id,
+                    organization_id: currentOrgId,
+                    date_str: dateKey,
+                    daily_hours: hoursToStore
+                });
+            } else {
+                await supabase.from('attendance').delete().match({
+                    user_id: user.id,
+                    organization_id: currentOrgId,
+                    date_str: dateKey
+                });
+            }
+        } catch (error) {
+            console.error('Failed to sync attendance:', error);
+            // Rollback state on failure
+            setMarkedDates(prev => {
+                const rollback = { ...prev };
+                if (isAdding) {
+                    delete rollback[dateKey];
+                } else {
+                    rollback[dateKey] = hoursToStore;
+                }
+                return rollback;
             });
         }
     };
@@ -357,20 +378,23 @@ export function AppProvider({ children }) {
     // Calculation
     const getMonthlyStats = () => {
         let count = 0;
-        Object.keys(markedDates).forEach(dateStr => {
+        let totalHours = 0;
+        Object.entries(markedDates).forEach(([dateStr, dayHours]) => {
             const [y, m] = dateStr.split('-').map(Number);
-            if (y === viewYear && m === viewMonth) count++;
+            if (y === viewYear && m === viewMonth) {
+                count++;
+                totalHours += Number(dayHours) || 0;
+            }
         });
 
         const rate = Number(currentOrg?.hourly_rate || 0);
-        const hours = Number(currentOrg?.daily_hours ?? 8);
         const tds = Number(currentOrg?.tds_percentage || 0);
 
-        const grossSalary = count * hours * rate;
+        const grossSalary = totalHours * rate;
         const tdsAmount = (grossSalary * tds) / 100;
         const netSalary = grossSalary - tdsAmount;
 
-        return { daysWorked: count, totalHours: count * hours, totalSalary: grossSalary, grossSalary, tdsAmount, netSalary };
+        return { daysWorked: count, totalHours, totalSalary: grossSalary, grossSalary, tdsAmount, netSalary };
     };
 
     return (
