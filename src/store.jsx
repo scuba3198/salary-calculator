@@ -2,6 +2,32 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { supabase } from './utils/supabase';
 import { getCurrentDate } from './utils/nepali-calendar';
 
+// Safe localStorage helpers with validation
+const safeGetItem = (key, fallback = null) => {
+    try {
+        const value = localStorage.getItem(key);
+        if (value === null) return fallback;
+        return value;
+    } catch {
+        return fallback;
+    }
+};
+
+const safeSetItem = (key, value) => {
+    try {
+        localStorage.setItem(key, value);
+    } catch (e) {
+        console.error('Failed to save to localStorage:', e);
+    }
+};
+
+// Validate daily hours (must be between 0 and 24)
+const validateDailyHours = (hours) => {
+    const num = Number(hours);
+    if (isNaN(num)) return 8;
+    return Math.max(0, Math.min(24, num));
+};
+
 
 const AppContext = createContext();
 
@@ -10,26 +36,33 @@ export function AppProvider({ children }) {
     const [current, setCurrent] = useState(getCurrentDate());
     const [viewYear, setViewYear] = useState(current.year);
     const [viewMonth, setViewMonth] = useState(current.month);
+    const currentDateRef = useRef(current);
+
+    // Sync ref with state
+    useEffect(() => {
+        currentDateRef.current = current;
+    }, [current]);
 
     useEffect(() => {
         const timer = setInterval(() => {
             const now = getCurrentDate();
+            const current = currentDateRef.current;
             if (now.year !== current.year || now.month !== current.month || now.day !== current.day) {
                 setCurrent(now);
             }
         }, 60000);
         return () => clearInterval(timer);
-    }, [current]);
+    }, []); // Empty deps - interval created once
 
     // --- Multi-Org State ---
     const [organizations, setOrganizations] = useState([]);
-    const [currentOrgId, setCurrentOrgId] = useState(() => localStorage.getItem('last_org_id') || null);
+    const [currentOrgId, setCurrentOrgId] = useState(() => safeGetItem('last_org_id') || null);
 
     // Derived Current Org
     const currentOrg = organizations.find(o => o.id === currentOrgId) || organizations[0] || null;
 
     // Theme (Global)
-    const [theme, setTheme] = useState(() => localStorage.getItem('app_theme') || 'dark');
+    const [theme, setTheme] = useState(() => safeGetItem('app_theme', 'dark') || 'dark');
 
     // Attendance: { "YYYY-MM-DD": daily_hours } for CURRENT Org
     const [markedDates, setMarkedDates] = useState({});
@@ -42,13 +75,14 @@ export function AppProvider({ children }) {
 
     // Guest Mode: Track if we have unsaved guest data to merge
     const guestDataRef = useRef({ markedDates: {}, orgSettings: null });
+    const isGuestModeRef = useRef(false); // Track guest mode independently
 
     // --- Effects ---
 
     // 1. Theme Effect
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('app_theme', theme);
+        safeSetItem('app_theme', theme);
         if (user && hasLoadedFromRemote.current) {
             supabase.from('user_settings').upsert({ user_id: user.id, theme }, { onConflict: 'user_id' }).then(({ error }) => {
                 if (error) console.error('Error syncing theme:', error);
@@ -62,6 +96,7 @@ export function AppProvider({ children }) {
             if (!session?.user) {
                 // GUEST MODE INITIALIZATION
                 setUser(null);
+                isGuestModeRef.current = true;
 
                 // Create a default ephemeral guest organization
                 const guestOrg = {
@@ -80,12 +115,14 @@ export function AppProvider({ children }) {
                 return;
             }
 
-            const isNewUser = user?.id !== session.user.id;
-            // Check if we have guest data to merge BEFORE setting user
-            const dataToMerge = (currentOrgId === 'guest' && Object.keys(markedDates).length > 0)
-                ? { dates: { ...markedDates }, settings: organizations[0] }
+            // Check if we're transitioning from guest mode with data to merge
+            const dataToMerge = isGuestModeRef.current && Object.keys(guestDataRef.current.markedDates).length > 0
+                ? { dates: { ...guestDataRef.current.markedDates }, settings: guestDataRef.current.orgSettings }
                 : null;
 
+            isGuestModeRef.current = false; // No longer in guest mode
+
+            const isNewUser = user?.id !== session.user.id;
             setUser(session.user);
 
             if (isNewUser || !hasLoadedFromRemote.current) {
@@ -103,7 +140,17 @@ export function AppProvider({ children }) {
         });
 
         return () => subscription.unsubscribe();
-    }, [user?.id]); // Re-run if user ID changes (though logic handles internal checks)
+    }, []); // Empty deps - auth listener only mounts once
+
+    // 2.5. Sync guest data to ref when in guest mode
+    useEffect(() => {
+        if (isGuestModeRef.current && currentOrgId === 'guest') {
+            guestDataRef.current = {
+                markedDates: { ...markedDates },
+                orgSettings: organizations[0] || null
+            };
+        }
+    }, [markedDates, organizations, currentOrgId]);
 
     // 3. User Data Handler
     const loadUserData = async (userId, dataToMerge = null) => {
@@ -141,13 +188,13 @@ export function AppProvider({ children }) {
             } else {
                 // Existing user
                 // Determine active org
-                const savedId = localStorage.getItem('last_org_id');
+                const savedId = safeGetItem('last_org_id');
                 activeId = validOrgs.find(o => o.id === savedId)?.id || validOrgs[0]?.id;
             }
 
             setOrganizations(validOrgs);
             setCurrentOrgId(activeId);
-            if (activeId) localStorage.setItem('last_org_id', activeId);
+            if (activeId) safeSetItem('last_org_id', activeId);
 
             // Fetch Attendance for Active Org
             let remoteDates = {};
@@ -158,7 +205,7 @@ export function AppProvider({ children }) {
                     .eq('organization_id', activeId);
 
                 if (!error && attendance) {
-                    attendance.forEach(row => remoteDates[row.date_str] = row.daily_hours ?? 8);
+                    attendance.forEach(row => remoteDates[row.date_str] = validateDailyHours(row.daily_hours));
                 }
             }
 
@@ -206,7 +253,7 @@ export function AppProvider({ children }) {
 
         if (!error && attendance) {
             const dates = {};
-            attendance.forEach(row => dates[row.date_str] = row.daily_hours ?? 8);
+            attendance.forEach(row => dates[row.date_str] = validateDailyHours(row.daily_hours));
             setMarkedDates(dates);
         }
     };
@@ -221,7 +268,7 @@ export function AppProvider({ children }) {
         if (orgId === currentOrgId) return;
         setIsSyncing(true);
         setCurrentOrgId(orgId);
-        localStorage.setItem('last_org_id', orgId);
+        safeSetItem('last_org_id', orgId);
         setMarkedDates({}); // Clear transiently
         try {
             await fetchAttendance(orgId);
@@ -255,15 +302,21 @@ export function AppProvider({ children }) {
     };
 
     const updateOrganization = async (id, updates) => {
+        // Find previous state for potential rollback
+        const prevOrgs = organizations;
+        const prevOrg = prevOrgs.find(o => o.id === id);
+
         // Optimistic update
-        setOrganizations(prev => prev.map(o => o.id === id ? { ...o, ...updates } : o));
+        setOrganizations(prev => prev.map(o => o.id === id ? { ...o, ...updates } : o }));
 
         if (!user || id === 'guest') return; // Stop here for guests or guest org
 
-        // Debounce actual DB call if needed? For now, direct simple update.
         const { error } = await supabase.from('organizations').update(updates).eq('id', id);
         if (error) {
             console.error('Update failed', error);
+            // Rollback to previous state
+            setOrganizations(prevOrgs);
+            alert(`Failed to save changes: ${error.message}`);
         }
     };
 
@@ -275,6 +328,19 @@ export function AppProvider({ children }) {
             return;
         }
 
+        // First, delete all attendance records for this organization
+        const { error: attendanceError } = await supabase
+            .from('attendance')
+            .delete()
+            .eq('organization_id', id);
+
+        if (attendanceError) {
+            console.error("Failed to delete attendance records:", attendanceError);
+            alert("Failed to delete organization's attendance records: " + attendanceError.message);
+            return;
+        }
+
+        // Then, delete the organization
         const { error, count } = await supabase
             .from('organizations')
             .delete({ count: 'exact' })
