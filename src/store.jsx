@@ -298,7 +298,8 @@ export function AppProvider({ children }) {
     const toggleDate = async (year, month, day) => {
         if (!currentOrgId || isSyncing) return;
 
-        const dateKey = `${year}-${month}-${day}`;
+        // Store month as 1-indexed (1=Baisakh, 12=Chaitra) for human readability
+        const dateKey = `${year}-${month + 1}-${day}`;
         const newDates = { ...markedDates };
         const isAdding = !newDates[dateKey];
         const hoursToStore = currentOrg?.daily_hours ?? 8;
@@ -345,7 +346,7 @@ export function AppProvider({ children }) {
         }
     };
 
-    const isMarked = (year, month, day) => !!markedDates[`${year}-${month}-${day}`];
+    const isMarked = (year, month, day) => !!markedDates[`${year}-${month + 1}-${day}`];
 
     // Getters/Setters Compatibility for existing components
     // These update the CURRENT organization
@@ -381,7 +382,8 @@ export function AppProvider({ children }) {
         let totalHours = 0;
         Object.entries(markedDates).forEach(([dateStr, dayHours]) => {
             const [y, m] = dateStr.split('-').map(Number);
-            if (y === viewYear && m === viewMonth) {
+            // date_str stores months as 1-indexed (1=Baisakh, 12=Chaitra)
+            if (y === viewYear && m === viewMonth + 1) {
                 count++;
                 totalHours += Number(dayHours) || 0;
             }
