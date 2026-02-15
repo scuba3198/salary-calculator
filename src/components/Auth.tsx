@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { supabase } from '../utils/supabase';
-import { User, LogIn, UserPlus, Loader2 } from 'lucide-react';
+import { LogIn, UserPlus, Loader2 } from 'lucide-react';
 
 export default function Auth() {
-    const [loading, setLoading] = useState(false);
-    const [email, setEmail] = useState('');
-    const [fullName, setFullName] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [isSignUp, setIsSignUp] = useState(false);
-    const [error, setError] = useState(null);
-    const [message, setMessage] = useState(null);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [email, setEmail] = useState<string>('');
+    const [fullName, setFullName] = useState<string>('');
+    const [password, setPassword] = useState<string>('');
+    const [confirmPassword, setConfirmPassword] = useState<string>('');
+    const [isSignUp, setIsSignUp] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
+    const [message, setMessage] = useState<string | null>(null);
 
-    const handleAuth = async (e) => {
+    const handleAuth = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
@@ -52,7 +52,7 @@ export default function Auth() {
                 });
                 if (error) throw error;
             }
-        } catch (err) {
+        } catch (err: any) {
             setError(err.message);
         } finally {
             setLoading(false);

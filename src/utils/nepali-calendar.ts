@@ -1,6 +1,7 @@
 import NepaliDate from 'nepali-date-converter';
+import { NepaliDate as NepaliDateType, MonthInfo } from '../types/app.types';
 
-export const getMonthDays = (year, month) => {
+export const getMonthDays = (year: number, month: number): MonthInfo => {
     // month is 0-indexed (0 = Baisakh, 11 = Chaitra) for consistency in app, 
     // but NepaliDate might expect 0-11 as well. Let's verify usage.
     // NepaliDate constructor: (year, month, date) where month is 0-11.
@@ -54,7 +55,7 @@ export const getMonthDays = (year, month) => {
     };
 };
 
-export const getNepaliMonthName = (monthIndex) => {
+export const getNepaliMonthName = (monthIndex: number): string => {
     const months = [
         "Baisakh", "Jestha", "Ashad", "Shrawan", "Bhadra", "Ashwin",
         "Kartik", "Mangsir", "Poush", "Magh", "Falgun", "Chaitra"
@@ -62,7 +63,7 @@ export const getNepaliMonthName = (monthIndex) => {
     return months[monthIndex % 12];
 };
 
-export const getEnglishMonthName = (monthIndex) => {
+export const getEnglishMonthName = (monthIndex: number): string => {
     // Approximate English months for display reference if needed
     const mapping = [
         "Apr/May", "May/Jun", "Jun/Jul", "Jul/Aug", "Aug/Sep", "Sep/Oct",
@@ -71,7 +72,7 @@ export const getEnglishMonthName = (monthIndex) => {
     return mapping[monthIndex];
 }
 
-export const getCurrentDate = () => {
+export const getCurrentDate = (): NepaliDateType => {
     const now = new NepaliDate();
     return {
         year: now.getYear(),

@@ -6,6 +6,7 @@
 [![Deploy to GitHub Pages](https://github.com/scuba3198/salary-calculator/actions/workflows/deploy.yml/badge.svg)](https://github.com/scuba3198/salary-calculator/actions/workflows/deploy.yml)
 [![Live Demo](https://img.shields.io/badge/🚀%20Live-Demo-6366f1)](https://scuba3198.github.io/salary-calculator)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Vite 7](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
 [![Supabase](https://img.shields.io/badge/Supabase-Auth%20%26%20DB-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
 
@@ -20,7 +21,7 @@
 ---
 
 <p align="left">
-Modern, fast, and feature-rich. The <b>Nepali Salary Calculator</b> is designed to solve the complexity of tracking workdays across multiple organizations using the native <b>Bikram Sambat (B.S.)</b> calendar. Whether you're a freelancer, a full-time employee, or managing a team, this tool provides real-time financial clarity.
+Modern, fast, and feature-rich. The <b>Nepali Salary Calculator</b> is a premium workspace designed to solve the complexity of tracking workdays across multiple organizations using the native <b>Bikram Sambat (B.S.)</b> calendar. Now fully migrated to <b>TypeScript</b> for industrial-grade stability.
 </p>
 
 </div>
@@ -66,6 +67,7 @@ The application is built on a "Lean-Core" architecture, ensuring maximum perform
 
 | Technology | Purpose |
 | :--- | :--- |
+| **TypeScript** | Type-safe development for enterprise reliability. |
 | **React 19** | Modern UI primitives and state synchronization. |
 | **Vite 7** | Next-generation build tool for instant HMR. |
 | **Supabase** | Hybrid PostgreSQL & Real-time Auth backbone. |

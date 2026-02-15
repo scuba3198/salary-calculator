@@ -2,7 +2,13 @@ import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { Plus, Trash2, Check, X, Briefcase, Settings } from 'lucide-react';
 
-const OrganizationManager = ({ onClose }) => {
+import { Organization } from '../types/app.types';
+
+interface OrganizationManagerProps {
+    onClose: () => void;
+}
+
+const OrganizationManager = ({ onClose }: OrganizationManagerProps) => {
     const {
         organizations,
         currentOrg,
@@ -12,10 +18,10 @@ const OrganizationManager = ({ onClose }) => {
         deleteOrganization
     } = useAppStore();
 
-    const [isAdding, setIsAdding] = useState(false);
-    const [newOrgName, setNewOrgName] = useState('');
-    const [editingId, setEditingId] = useState(null);
-    const [editName, setEditName] = useState('');
+    const [isAdding, setIsAdding] = useState<boolean>(false);
+    const [newOrgName, setNewOrgName] = useState<string>('');
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editName, setEditName] = useState<string>('');
 
     const handleAdd = async () => {
         if (!newOrgName.trim()) return;
@@ -24,20 +30,20 @@ const OrganizationManager = ({ onClose }) => {
         setIsAdding(false);
     };
 
-    const startEdit = (org) => {
+    const startEdit = (org: Organization) => {
         setEditingId(org.id);
         setEditName(org.name);
     };
 
     const saveEdit = async () => {
-        if (!editName.trim()) return;
+        if (!editName.trim() || !editingId) return;
         await updateOrganization(editingId, { name: editName });
         setEditingId(null);
     };
 
-    const [deleteConfirmationId, setDeleteConfirmationId] = useState(null);
+    const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null);
 
-    const confirmDelete = async (id, e) => {
+    const confirmDelete = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
         await deleteOrganization(id);
         setDeleteConfirmationId(null);
@@ -67,10 +73,10 @@ const OrganizationManager = ({ onClose }) => {
                         }}
                     >
                         {editingId === org.id ? (
-                            <div style={{ display: 'flex', gap: '0.5rem', flex: 1 }} onClick={e => e.stopPropagation()}>
+                            <div style={{ display: 'flex', gap: '0.5rem', flex: 1 }} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                                 <input
                                     value={editName}
-                                    onChange={e => setEditName(e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditName(e.target.value)}
                                     autoFocus
                                     style={{ flex: 1, padding: '0.25rem', borderRadius: '4px' }}
                                 />
@@ -80,13 +86,13 @@ const OrganizationManager = ({ onClose }) => {
                         ) : (
                             <>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                    <Briefcase size={20} color={org.color} />
+                                    <Briefcase size={20} color={org.color || undefined} />
                                     <span style={{ fontWeight: '500' }}>{org.name}</span>
                                     {currentOrg?.id === org.id && <span style={{ fontSize: '0.75rem', background: 'var(--primary)', color: 'white', padding: '0.1rem 0.5rem', borderRadius: '1rem' }}>Active</span>}
                                 </div>
                                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                                     <button
-                                        onClick={(e) => { e.stopPropagation(); startEdit(org); }}
+                                        onClick={(e: React.MouseEvent) => { e.stopPropagation(); startEdit(org); }}
                                         className="icon-btn"
                                         title="Rename"
                                     >
@@ -96,7 +102,7 @@ const OrganizationManager = ({ onClose }) => {
                                         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                                             <span style={{ fontSize: '0.75rem', color: 'var(--danger)' }}>Confirm?</span>
                                             <button
-                                                onClick={(e) => confirmDelete(org.id, e)}
+                                                onClick={(e: React.MouseEvent) => confirmDelete(org.id, e)}
                                                 className="icon-btn"
                                                 title="Confirm Delete"
                                                 style={{ color: 'var(--danger)' }}
@@ -104,7 +110,7 @@ const OrganizationManager = ({ onClose }) => {
                                                 <Check size={16} />
                                             </button>
                                             <button
-                                                onClick={(e) => { e.stopPropagation(); setDeleteConfirmationId(null); }}
+                                                onClick={(e: React.MouseEvent) => { e.stopPropagation(); setDeleteConfirmationId(null); }}
                                                 className="icon-btn"
                                                 title="Cancel"
                                             >
@@ -114,7 +120,7 @@ const OrganizationManager = ({ onClose }) => {
                                     ) : (
                                         organizations.length > 1 && (
                                             <button
-                                                onClick={(e) => { e.stopPropagation(); setDeleteConfirmationId(org.id); }}
+                                                onClick={(e: React.MouseEvent) => { e.stopPropagation(); setDeleteConfirmationId(org.id); }}
                                                 className="icon-btn"
                                                 title="Delete"
                                                 style={{ color: 'var(--danger)' }}
@@ -134,7 +140,7 @@ const OrganizationManager = ({ onClose }) => {
                 <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
                     <input
                         value={newOrgName}
-                        onChange={e => setNewOrgName(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewOrgName(e.target.value)}
                         placeholder="New Workspace Name (e.g. Freelance)"
                         autoFocus
                         style={{ flex: 1, padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid var(--border)' }}

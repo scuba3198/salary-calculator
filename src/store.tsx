@@ -1,16 +1,24 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { User } from '@supabase/supabase-js';
 import { supabase } from './utils/supabase';
 import { getCurrentDate } from './utils/nepali-calendar';
+import {
+    AppContextValue,
+    Organization,
+    MarkedDatesMap,
+    Theme,
+    NepaliDate,
+    MonthlyStats
+} from './types/app.types';
 
+const AppContext = createContext<AppContextValue | undefined>(undefined);
 
-const AppContext = createContext();
-
-export function AppProvider({ children }) {
+export function AppProvider({ children }: { children: React.ReactNode }) {
     // Current Nepali Date (Auto-updates)
-    const [current, setCurrent] = useState(getCurrentDate());
-    const [viewYear, setViewYear] = useState(current.year);
-    const [viewMonth, setViewMonth] = useState(current.month);
-    const currentDateRef = useRef(current);
+    const [current, setCurrent] = useState<NepaliDate>(getCurrentDate());
+    const [viewYear, setViewYear] = useState<number>(current.year);
+    const [viewMonth, setViewMonth] = useState<number>(current.month);
+    const currentDateRef = useRef<NepaliDate>(current);
 
     // Sync ref with state
     useEffect(() => {
@@ -29,27 +37,27 @@ export function AppProvider({ children }) {
     }, []);
 
     // --- Multi-Org State ---
-    const [organizations, setOrganizations] = useState([]);
-    const [currentOrgId, setCurrentOrgId] = useState(() => localStorage.getItem('last_org_id') || null);
+    const [organizations, setOrganizations] = useState<Organization[]>([]);
+    const [currentOrgId, setCurrentOrgId] = useState<string | null>(() => localStorage.getItem('last_org_id') || null);
 
     // Derived Current Org
-    const currentOrg = organizations.find(o => o.id === currentOrgId) || organizations[0] || null;
+    const currentOrg: Organization | null = organizations.find(o => o.id === currentOrgId) || organizations[0] || null;
 
     // Theme (Global)
-    const [theme, setTheme] = useState(() => localStorage.getItem('app_theme') || 'dark');
+    const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('app_theme') || 'dark') as Theme);
 
     // Attendance: { "YYYY-MM-DD": daily_hours } for CURRENT Org
-    const [markedDates, setMarkedDates] = useState({});
+    const [markedDates, setMarkedDates] = useState<MarkedDatesMap>({});
 
     // Auth & Sync State
-    const [user, setUser] = useState(null);
-    const [loadingAuth, setLoadingAuth] = useState(true);
-    const [isSyncing, setIsSyncing] = useState(false);
-    const hasLoadedFromRemote = useRef(false);
+    const [user, setUser] = useState<User | null>(null);
+    const [loadingAuth, setLoadingAuth] = useState<boolean>(true);
+    const [isSyncing, setIsSyncing] = useState<boolean>(false);
+    const hasLoadedFromRemote = useRef<boolean>(false);
 
     // Guest Mode: Track if we have unsaved guest data to merge
-    const guestDataRef = useRef({ markedDates: {}, orgSettings: null });
-    const isGuestModeRef = useRef(false);
+    const guestDataRef = useRef<{ markedDates: MarkedDatesMap; orgSettings: Organization | null }>({ markedDates: {}, orgSettings: null });
+    const isGuestModeRef = useRef<boolean>(false);
 
     // --- Effects ---
 
@@ -66,19 +74,23 @@ export function AppProvider({ children }) {
 
     // 2. Auth Listener
     useEffect(() => {
-        const handleAuthChange = async (session) => {
+        const handleAuthChange = async (session: any) => {
             if (!session?.user) {
                 // GUEST MODE INITIALIZATION
                 setUser(null);
                 isGuestModeRef.current = true;
 
                 // Create a default ephemeral guest organization
-                const guestOrg = {
+                const guestOrg: Organization = {
                     id: 'guest',
                     name: 'Draft Workspace',
                     hourly_rate: 0,
                     daily_hours: 8,
-                    tds_percentage: 1
+                    tds_percentage: 1,
+                    user_id: '',
+                    color: null,
+                    created_at: null,
+                    updated_at: null
                 };
                 setOrganizations([guestOrg]);
                 setCurrentOrgId('guest');
@@ -127,7 +139,7 @@ export function AppProvider({ children }) {
     }, [markedDates, organizations, currentOrgId]);
 
     // 3. User Data Handler
-    const loadUserData = async (userId, dataToMerge = null) => {
+    const loadUserData = async (userId: string, dataToMerge: { dates: MarkedDatesMap; settings: Organization | null } | null = null) => {
         try {
             setIsSyncing(true);
             setLoadingAuth(true);
@@ -141,19 +153,19 @@ export function AppProvider({ children }) {
 
             if (orgError) throw orgError;
 
-            let validOrgs = orgs || [];
-            let activeId = null;
+            let validOrgs: Organization[] = orgs || [];
+            let activeId: string | null = null;
 
             // Handle Merging Guest Data into Primary Org
             if (validOrgs.length === 0) {
                 // New user - create from guest settings or default
-                const defaults = dataToMerge?.settings || { name: 'Primary Job', hourly_rate: 0, daily_hours: 8 };
+                const defaults = dataToMerge?.settings || { name: 'Primary Job', hourly_rate: 0, daily_hours: 8, tds_percentage: 1 };
                 const { data: newOrg } = await supabase.from('organizations').insert({
                     user_id: userId,
                     name: defaults.name,
                     hourly_rate: defaults.hourly_rate,
                     daily_hours: defaults.daily_hours,
-                    tds_percentage: defaults.tds_percentage || 1
+                    tds_percentage: (defaults as any).tds_percentage || 1
                 }).select().single();
                 if (newOrg) {
                     validOrgs = [newOrg];
@@ -171,7 +183,7 @@ export function AppProvider({ children }) {
             if (activeId) localStorage.setItem('last_org_id', activeId);
 
             // Fetch Attendance for Active Org
-            let remoteDates = {};
+            const remoteDates: MarkedDatesMap = {};
             if (activeId) {
                 const { data: attendance, error } = await supabase
                     .from('attendance')
@@ -185,7 +197,7 @@ export function AppProvider({ children }) {
 
             // MERGE GUEST DATES
             if (dataToMerge?.dates && activeId) {
-                const datesToInsert = [];
+                const datesToInsert: any[] = [];
                 Object.entries(dataToMerge.dates).forEach(([dateStr, dayHours]) => {
                     if (!remoteDates[dateStr]) { // Only insert if not already present
                         datesToInsert.push({
@@ -208,7 +220,7 @@ export function AppProvider({ children }) {
 
             // Fetch Theme from user_settings (if exists)
             const { data: settings } = await supabase.from('user_settings').select('theme').eq('user_id', userId).single();
-            if (settings?.theme) setTheme(settings.theme);
+            if (settings?.theme) setTheme(settings.theme as Theme);
 
             hasLoadedFromRemote.current = true;
         } catch (err) {
@@ -219,14 +231,14 @@ export function AppProvider({ children }) {
         }
     };
 
-    const fetchAttendance = async (orgId) => {
+    const fetchAttendance = async (orgId: string) => {
         const { data: attendance, error } = await supabase
             .from('attendance')
             .select('date_str, daily_hours')
             .eq('organization_id', orgId);
 
         if (!error && attendance) {
-            const dates = {};
+            const dates: MarkedDatesMap = {};
             attendance.forEach(row => dates[row.date_str] = row.daily_hours ?? 8);
             setMarkedDates(dates);
         }
@@ -238,7 +250,7 @@ export function AppProvider({ children }) {
 
     // --- Actions ---
 
-    const switchOrganization = async (orgId) => {
+    const switchOrganization = async (orgId: string) => {
         if (orgId === currentOrgId) return;
         setIsSyncing(true);
         setCurrentOrgId(orgId);
@@ -253,7 +265,7 @@ export function AppProvider({ children }) {
         }
     };
 
-    const addOrganization = async (name) => {
+    const addOrganization = async (name: string) => {
         if (!user) {
             // Guest mode: Only one org allowed
             alert("Guests can only use the 'Draft Workspace'. Please login to create multiple organizations.");
@@ -269,26 +281,26 @@ export function AppProvider({ children }) {
         }).select().single();
 
         if (!error && data) {
-            setOrganizations(prev => [...prev, data]);
+            setOrganizations(prev => [...prev, data as Organization]);
             switchOrganization(data.id);
         }
         setIsSyncing(false);
     };
 
-    const updateOrganization = async (id, updates) => {
+    const updateOrganization = async (id: string, updates: Partial<Organization>) => {
         // Optimistic update
         setOrganizations(prev => prev.map(o => o.id === id ? { ...o, ...updates } : o));
 
         if (!user || id === 'guest') return; // Stop here for guests or guest org
 
         // Debounce actual DB call if needed? For now, direct simple update.
-        const { error } = await supabase.from('organizations').update(updates).eq('id', id);
+        const { error } = await supabase.from('organizations').update(updates as any).eq('id', id);
         if (error) {
             console.error('Update failed', error);
         }
     };
 
-    const deleteOrganization = async (id) => {
+    const deleteOrganization = async (id: string) => {
         if (!user) return; // Guests can't delete the default org really
 
         if (organizations.length <= 1) {
@@ -329,7 +341,7 @@ export function AppProvider({ children }) {
     };
 
     // Calendar Action
-    const toggleDate = async (year, month, day) => {
+    const toggleDate = async (year: number, month: number, day: number) => {
         if (!currentOrgId || isSyncing) return;
 
         const dateKey = `${year}-${month + 1}-${day}`;
@@ -379,18 +391,18 @@ export function AppProvider({ children }) {
         }
     };
 
-    const isMarked = (year, month, day) => !!markedDates[`${year}-${month + 1}-${day}`];
+    const isMarked = (year: number, month: number, day: number) => !!markedDates[`${year}-${month + 1}-${day}`];
 
     // Getters/Setters Compatibility for existing components
     // These update the CURRENT organization
-    const setHourlyRate = (val) => {
-        if (currentOrgId) updateOrganization(currentOrgId, { hourly_rate: val });
+    const setHourlyRate = (val: number | '') => {
+        if (currentOrgId) updateOrganization(currentOrgId, { hourly_rate: val === '' ? 0 : val });
     };
-    const setDailyHours = (val) => {
+    const setDailyHours = (val: number) => {
         if (currentOrgId) updateOrganization(currentOrgId, { daily_hours: val });
     };
-    const setTdsPercentage = (val) => {
-        if (currentOrgId) updateOrganization(currentOrgId, { tds_percentage: val });
+    const setTdsPercentage = (val: number | '') => {
+        if (currentOrgId) updateOrganization(currentOrgId, { tds_percentage: val === '' ? 0 : val });
     };
 
     const resetData = async () => {
@@ -404,13 +416,13 @@ export function AppProvider({ children }) {
     };
 
     const forceLogout = async () => {
-        try { await supabase.auth.signOut(); } catch { /* ignore */ }
+        try { await supabase.auth.signOut(); } catch (_) { /* ignore */ }
         localStorage.clear();
         window.location.reload();
     };
 
     // Calculation
-    const getMonthlyStats = () => {
+    const getMonthlyStats = (): MonthlyStats => {
         let count = 0;
         let totalHours = 0;
         Object.entries(markedDates).forEach(([dateStr, dayHours]) => {
@@ -462,6 +474,10 @@ export function AppProvider({ children }) {
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
-export function useAppStore() {
-    return useContext(AppContext);
+export function useAppStore(): AppContextValue {
+    const context = useContext(AppContext);
+    if (!context) {
+        throw new Error('useAppStore must be used within an AppProvider');
+    }
+    return context;
 }

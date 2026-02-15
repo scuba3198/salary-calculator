@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { AppProvider, useAppStore } from './store';
 import Calendar from './components/Calendar';
 import SalaryStats from './components/SalaryStats';
@@ -21,7 +21,7 @@ function AppContent() {
         console.warn('Stale session detected, forcing logout');
         forceLogout();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Logout error:', error);
       forceLogout();
     }

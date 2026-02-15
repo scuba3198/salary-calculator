@@ -35,7 +35,7 @@ const Calendar = () => {
     };
 
     // Generate grid items
-    const days = [];
+    const days: React.ReactNode[] = [];
     // Empty slots for start offset
     for (let i = 0; i < startWeekday; i++) {
         days.push(<div key={`empty-${i}`} className="calendar-day disabled" />);
