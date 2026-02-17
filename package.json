@@ -8,7 +8,7 @@
 		"dev": "vite",
 		"build": "vite build",
 		"typecheck": "tsc --noEmit",
-		"lint": "eslint .",
+		"lint": "oxlint .",
 		"preview": "vite preview"
 	},
 	"dependencies": {
@@ -19,12 +19,12 @@
 		"react-dom": "^19.2.0"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.4.2",
 		"@tsconfig/strictest": "^2.0.8",
 		"@types/react": "^19.2.5",
 		"@types/react-dom": "^19.2.3",
 		"@vitejs/plugin-react": "^5.1.1",
 		"dotenv": "^17.2.3",
+		"oxlint": "^1.48.0",
 		"typescript": "^5.9.3",
 		"vite": "^7.2.4"
 	}
