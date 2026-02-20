@@ -48,9 +48,7 @@ const Calendar = () => {
 	for (let d = 1; d <= daysInMonth; d++) {
 		const isActive = isMarked(viewYear, viewMonth, d);
 		const isToday =
-			viewYear === currentDate.year &&
-			viewMonth === currentDate.month &&
-			d === currentDate.day;
+			viewYear === currentDate.year && viewMonth === currentDate.month && d === currentDate.day;
 		const isSaturday = (startWeekday + d - 1) % 7 === 6;
 
 		days.push(

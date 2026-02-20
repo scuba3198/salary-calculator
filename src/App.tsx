@@ -40,8 +40,7 @@ function AppContent() {
 						fontWeight: "500",
 					}}
 				>
-					Guest Mode: Data is unsaved and will be lost on refresh. Login to save
-					your progress.
+					Guest Mode: Data is unsaved and will be lost on refresh. Login to save your progress.
 				</div>
 			)}
 			<header
@@ -63,9 +62,7 @@ function AppContent() {
 					<button
 						onClick={toggleTheme}
 						className="icon-btn"
-						title={
-							theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"
-						}
+						title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
 						style={{
 							padding: "0.5rem",
 							borderRadius: "0.5rem",
@@ -107,11 +104,7 @@ function AppContent() {
 									}}
 								>
 									<Briefcase size={12} /> {currentOrg.name}
-									{!user && (
-										<span style={{ marginLeft: "4px", opacity: 0.7 }}>
-											(Draft)
-										</span>
-									)}
+									{!user && <span style={{ marginLeft: "4px", opacity: 0.7 }}>(Draft)</span>}
 								</button>
 							)}
 						</div>
@@ -201,9 +194,7 @@ function AppContent() {
 						padding: "1rem",
 					}}
 				>
-					<div
-						style={{ position: "relative", width: "100%", maxWidth: "400px" }}
-					>
+					<div style={{ position: "relative", width: "100%", maxWidth: "400px" }}>
 						<button
 							onClick={() => setShowAuth(false)}
 							style={{

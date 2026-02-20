@@ -8,7 +8,9 @@
 		"dev": "vite",
 		"build": "vite build",
 		"typecheck": "tsc --noEmit",
-		"lint": "eslint .",
+		"lint": "biome lint src scripts *.ts",
+		"format": "biome format --write src scripts *.ts",
+		"check": "biome check --write src scripts *.ts",
 		"preview": "vite preview"
 	},
 	"dependencies": {

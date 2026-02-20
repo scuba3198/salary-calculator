@@ -69,9 +69,6 @@ export interface AppContextValue {
 	currentOrg: Organization | null;
 	switchOrganization: (orgId: string) => Promise<void>;
 	addOrganization: (name: string) => Promise<void>;
-	updateOrganization: (
-		id: string,
-		updates: Partial<Organization>,
-	) => Promise<void>;
+	updateOrganization: (id: string, updates: Partial<Organization>) => Promise<void>;
 	deleteOrganization: (id: string) => Promise<void>;
 }

@@ -40,9 +40,7 @@ export default function Auth() {
 				if (error) throw error;
 
 				if (data?.user && !data.session) {
-					setMessage(
-						"Account created! Please check your email for the confirmation link.",
-					);
+					setMessage("Account created! Please check your email for the confirmation link.");
 				} else {
 					setMessage("Account created! You are logged in.");
 				}
@@ -101,10 +99,7 @@ export default function Auth() {
 				</p>
 			</div>
 
-			<form
-				onSubmit={handleAuth}
-				style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-			>
+			<form onSubmit={handleAuth} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
 				{isSignUp && (
 					<div>
 						<label
@@ -290,9 +285,7 @@ export default function Auth() {
 						textDecoration: "underline",
 					}}
 				>
-					{isSignUp
-						? "Already have an account? Login"
-						: "Don't have an account? Sign Up"}
+					{isSignUp ? "Already have an account? Login" : "Don't have an account? Sign Up"}
 				</button>
 			</div>
 		</div>

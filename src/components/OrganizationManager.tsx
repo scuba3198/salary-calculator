@@ -42,9 +42,7 @@ const OrganizationManager = ({ onClose }: OrganizationManagerProps) => {
 		setEditingId(null);
 	};
 
-	const [deleteConfirmationId, setDeleteConfirmationId] = useState<
-		string | null
-	>(null);
+	const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null);
 
 	const confirmDelete = async (id: string, e: React.MouseEvent) => {
 		e.stopPropagation();
@@ -89,13 +87,9 @@ const OrganizationManager = ({ onClose }: OrganizationManagerProps) => {
 							justifyContent: "space-between",
 							cursor: "pointer",
 							border:
-								currentOrg?.id === org.id
-									? "2px solid var(--primary)"
-									: "1px solid var(--border)",
+								currentOrg?.id === org.id ? "2px solid var(--primary)" : "1px solid var(--border)",
 							background:
-								currentOrg?.id === org.id
-									? "rgba(var(--primary-rgb), 0.1)"
-									: "var(--surface)",
+								currentOrg?.id === org.id ? "rgba(var(--primary-rgb), 0.1)" : "var(--surface)",
 						}}
 					>
 						{editingId === org.id ? (
@@ -105,17 +99,11 @@ const OrganizationManager = ({ onClose }: OrganizationManagerProps) => {
 							>
 								<input
 									value={editName}
-									onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-										setEditName(e.target.value)
-									}
+									onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditName(e.target.value)}
 									autoFocus
 									style={{ flex: 1, padding: "0.25rem", borderRadius: "4px" }}
 								/>
-								<button
-									onClick={saveEdit}
-									className="icon-btn"
-									style={{ color: "var(--success)" }}
-								>
+								<button onClick={saveEdit} className="icon-btn" style={{ color: "var(--success)" }}>
 									<Check size={16} />
 								</button>
 								<button onClick={() => setEditingId(null)} className="icon-btn">
@@ -166,15 +154,9 @@ const OrganizationManager = ({ onClose }: OrganizationManagerProps) => {
 												alignItems: "center",
 											}}
 										>
-											<span
-												style={{ fontSize: "0.75rem", color: "var(--danger)" }}
-											>
-												Confirm?
-											</span>
+											<span style={{ fontSize: "0.75rem", color: "var(--danger)" }}>Confirm?</span>
 											<button
-												onClick={(e: React.MouseEvent) =>
-													confirmDelete(org.id, e)
-												}
+												onClick={(e: React.MouseEvent) => confirmDelete(org.id, e)}
 												className="icon-btn"
 												title="Confirm Delete"
 												style={{ color: "var(--danger)" }}
@@ -218,9 +200,7 @@ const OrganizationManager = ({ onClose }: OrganizationManagerProps) => {
 				<div style={{ marginTop: "1rem", display: "flex", gap: "0.5rem" }}>
 					<input
 						value={newOrgName}
-						onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-							setNewOrgName(e.target.value)
-						}
+						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewOrgName(e.target.value)}
 						placeholder="New Workspace Name (e.g. Freelance)"
 						autoFocus
 						style={{

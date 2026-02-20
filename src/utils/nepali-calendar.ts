@@ -1,8 +1,5 @@
 import NepaliDate from "nepali-date-converter";
-import type {
-	MonthInfo,
-	NepaliDate as NepaliDateType,
-} from "../types/app.types";
+import type { MonthInfo, NepaliDate as NepaliDateType } from "../types/app.types";
 
 export const getMonthDays = (year: number, month: number): MonthInfo => {
 	// month is 0-indexed (0 = Baisakh, 11 = Chaitra) for consistency in app,

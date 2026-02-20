@@ -30,11 +30,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		const timer = setInterval(() => {
 			const now = getCurrentDate();
 			const current = currentDateRef.current;
-			if (
-				now.year !== current.year ||
-				now.month !== current.month ||
-				now.day !== current.day
-			) {
+			if (now.year !== current.year || now.month !== current.month || now.day !== current.day) {
 				setCurrent(now);
 			}
 		}, 60000);
@@ -49,9 +45,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 	// Derived Current Org
 	const currentOrg: Organization | null =
-		organizations.find((o) => o.id === currentOrgId) ||
-		organizations[0] ||
-		null;
+		organizations.find((o) => o.id === currentOrgId) || organizations[0] || null;
 
 	// Theme (Global)
 	const [theme, setTheme] = useState<Theme>(
@@ -121,12 +115,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 			// Check if we're transitioning from guest mode with data to merge
 			const dataToMerge =
-				isGuestModeRef.current &&
-					Object.keys(guestDataRef.current.markedDates).length > 0
+				isGuestModeRef.current && Object.keys(guestDataRef.current.markedDates).length > 0
 					? {
-						dates: { ...guestDataRef.current.markedDates },
-						settings: guestDataRef.current.orgSettings,
-					}
+							dates: { ...guestDataRef.current.markedDates },
+							settings: guestDataRef.current.orgSettings,
+						}
 					: null;
 
 			isGuestModeRef.current = false; // No longer in guest mode
@@ -216,8 +209,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				// Existing user
 				// Determine active org
 				const savedId = localStorage.getItem("last_org_id");
-				activeId =
-					validOrgs.find((o) => o.id === savedId)?.id ?? validOrgs[0]?.id ?? null;
+				activeId = validOrgs.find((o) => o.id === savedId)?.id ?? validOrgs[0]?.id ?? null;
 			}
 
 			setOrganizations(validOrgs);
@@ -233,9 +225,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 					.eq("organization_id", activeId);
 
 				if (!error && attendance) {
-					attendance.forEach(
-						(row) => (remoteDates[row.date_str] = row.daily_hours ?? 8),
-					);
+					attendance.forEach((row) => (remoteDates[row.date_str] = row.daily_hours ?? 8));
 				}
 			}
 
@@ -342,14 +332,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		setIsSyncing(false);
 	};
 
-	const updateOrganization = async (
-		id: string,
-		updates: Partial<Organization>,
-	) => {
+	const updateOrganization = async (id: string, updates: Partial<Organization>) => {
 		// Optimistic update
-		setOrganizations((prev) =>
-			prev.map((o) => (o.id === id ? { ...o, ...updates } : o)),
-		);
+		setOrganizations((prev) => prev.map((o) => (o.id === id ? { ...o, ...updates } : o)));
 
 		if (!user || id === "guest") return; // Stop here for guests or guest org
 
@@ -379,10 +364,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 		if (attendanceError) {
 			console.error("Failed to delete attendance records:", attendanceError);
-			alert(
-				"Failed to delete organization's attendance records: " +
-				attendanceError.message,
-			);
+			alert("Failed to delete organization's attendance records: " + attendanceError.message);
 			return;
 		}
 
@@ -396,9 +378,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			console.error("Delete failed:", error);
 			alert("Failed to delete organization: " + error.message);
 		} else if (count === 0) {
-			alert(
-				"Failed to delete: Organization not found or permission denied (0 rows affected).",
-			);
+			alert("Failed to delete: Organization not found or permission denied (0 rows affected).");
 		} else {
 			const newOrgs = organizations.filter((o) => o.id !== id);
 			setOrganizations(newOrgs);
@@ -465,8 +445,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	// Getters/Setters Compatibility for existing components
 	// These update the CURRENT organization
 	const setHourlyRate = (val: number | "") => {
-		if (currentOrgId)
-			updateOrganization(currentOrgId, { hourly_rate: val === "" ? 0 : val });
+		if (currentOrgId) updateOrganization(currentOrgId, { hourly_rate: val === "" ? 0 : val });
 	};
 	const setDailyHours = (val: number) => {
 		if (currentOrgId) updateOrganization(currentOrgId, { daily_hours: val });
@@ -481,10 +460,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	const resetData = async () => {
 		if (window.confirm("Reset current workspace data?")) {
 			if (user && currentOrgId) {
-				await supabase
-					.from("attendance")
-					.delete()
-					.eq("organization_id", currentOrgId);
+				await supabase.from("attendance").delete().eq("organization_id", currentOrgId);
 				await updateOrganization(currentOrgId, {
 					hourly_rate: 0,
 					daily_hours: 8,

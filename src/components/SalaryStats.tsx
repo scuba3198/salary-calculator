@@ -1,5 +1,5 @@
 import { Banknote, Clock } from "lucide-react";
-import { } from "react"; // or just remove it
+import {} from "react"; // or just remove it
 import { useAppStore } from "../store";
 
 const SalaryStats = () => {
@@ -23,20 +23,12 @@ const SalaryStats = () => {
 				</div>
 				<h2>Monthly Total</h2>
 
-				<div
-					style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
-				>
+				<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
 					<div className="text-xl" style={{ color: "var(--text-secondary)" }}>
-						Total Days:{" "}
-						<span style={{ color: "var(--text-primary)" }}>
-							{stats.daysWorked}
-						</span>
+						Total Days: <span style={{ color: "var(--text-primary)" }}>{stats.daysWorked}</span>
 					</div>
 					<div className="text-xl" style={{ color: "var(--text-secondary)" }}>
-						Total Hours:{" "}
-						<span style={{ color: "var(--text-primary)" }}>
-							{stats.totalHours}
-						</span>
+						Total Hours: <span style={{ color: "var(--text-primary)" }}>{stats.totalHours}</span>
 					</div>
 					<div
 						style={{
@@ -52,8 +44,7 @@ const SalaryStats = () => {
 								color: "var(--text-secondary)",
 							}}
 						>
-							<span>Gross:</span>{" "}
-							<span>Rs. {stats.grossSalary.toLocaleString()}</span>
+							<span>Gross:</span> <span>Rs. {stats.grossSalary.toLocaleString()}</span>
 						</div>
 						<div
 							style={{
@@ -81,15 +72,12 @@ const SalaryStats = () => {
 								background: "var(--success)",
 								WebkitBackgroundClip: "text",
 								WebkitTextFillColor: "transparent",
-								backgroundImage:
-									"linear-gradient(135deg, #00b894 0%, #00cec9 100%)",
+								backgroundImage: "linear-gradient(135deg, #00b894 0%, #00cec9 100%)",
 							}}
 						>
 							Rs. {stats.netSalary.toLocaleString()}
 						</span>
-						<div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-							Net Salary
-						</div>
+						<div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Net Salary</div>
 					</div>
 				</div>
 			</div>
@@ -118,11 +106,7 @@ const SalaryStats = () => {
 								["-", "e", "E"].includes(e.key) && e.preventDefault()
 							}
 							onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-								setHourlyRate(
-									e.target.value === ""
-										? ""
-										: Math.max(0, Number(e.target.value)),
-								)
+								setHourlyRate(e.target.value === "" ? "" : Math.max(0, Number(e.target.value)))
 							}
 						/>
 					</div>
@@ -139,9 +123,7 @@ const SalaryStats = () => {
 							}
 							onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 								setDailyHours(
-									e.target.value === ""
-										? 0
-										: Math.max(0, Math.min(24, Number(e.target.value))),
+									e.target.value === "" ? 0 : Math.max(0, Math.min(24, Number(e.target.value))),
 								)
 							}
 						/>
@@ -159,9 +141,7 @@ const SalaryStats = () => {
 							}
 							onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 								setTdsPercentage(
-									e.target.value === ""
-										? ""
-										: Math.max(0, Math.min(100, Number(e.target.value))),
+									e.target.value === "" ? "" : Math.max(0, Math.min(100, Number(e.target.value))),
 								)
 							}
 						/>

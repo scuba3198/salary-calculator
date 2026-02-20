@@ -17,8 +17,7 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 // Use service role key for migration if available (bypasses RLS)
 const supabaseKey =
-	process.env.VITE_SUPABASE_SERVICE_ROLE_KEY ||
-	process.env.VITE_SUPABASE_ANON_KEY;
+	process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
 	console.error("❌ Missing Supabase credentials. Check your .env file.");
@@ -46,9 +45,7 @@ async function migrate() {
 	try {
 		// Step 1: Fetch all attendance records
 		console.log("📥 Fetching all attendance records...");
-		const { data: attendance, error } = await supabase
-			.from("attendance")
-			.select("id, date_str");
+		const { data: attendance, error } = await supabase.from("attendance").select("id, date_str");
 
 		if (error) throw error;
 
@@ -96,9 +93,7 @@ async function migrate() {
 		// For safety, require explicit confirmation via environment variable
 		if (process.env.CONFIRM_MIGRATION !== "yes") {
 			console.log("❌ Migration aborted for safety.");
-			console.log(
-				"📝 To run this migration, set CONFIRM_MIGRATION=yes in your .env file",
-			);
+			console.log("📝 To run this migration, set CONFIRM_MIGRATION=yes in your .env file");
 			return;
 		}
 
@@ -114,9 +109,7 @@ async function migrate() {
 				.eq("id", record.id);
 
 			if (updateError) {
-				console.error(
-					`❌ Failed to update ${record.old_date_str}: ${updateError.message}`,
-				);
+				console.error(`❌ Failed to update ${record.old_date_str}: ${updateError.message}`);
 				failed++;
 			} else {
 				updated++;
