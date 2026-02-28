@@ -31,3 +31,11 @@ dist-ssr
 .agent/
 .agents/
 .mcp.json
+
+# OS-specific files
+Thumbs.db
+desktop.ini
+
+# Vite/Supabase temporary files
+vite.config.ts.timestamp-*
+.supabase/
