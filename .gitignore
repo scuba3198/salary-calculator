@@ -30,3 +30,4 @@ dist-ssr
 .cursor/
 .agent/
 .agents/
+.mcp.json
