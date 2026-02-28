@@ -52,13 +52,14 @@ const Calendar = () => {
 		const isSaturday = (startWeekday + d - 1) % 7 === 6;
 
 		days.push(
-			<div
+			<button
+				type="button"
 				key={d}
 				className={`calendar-day ${isActive ? "active" : ""} ${isToday ? "today" : ""} ${isSaturday ? "is-holiday" : ""}`}
 				onClick={() => toggleDate(viewYear, viewMonth, d)}
 			>
 				{d}
-			</div>,
+			</button>,
 		);
 	}
 
@@ -72,7 +73,7 @@ const Calendar = () => {
 					marginBottom: "1rem",
 				}}
 			>
-				<button onClick={handlePrev}>
+				<button type="button" onClick={handlePrev}>
 					<ChevronLeft />
 				</button>
 				<h2>
@@ -90,7 +91,7 @@ const Calendar = () => {
 						</span>
 					)}
 				</h2>
-				<button onClick={handleNext}>
+				<button type="button" onClick={handleNext}>
 					<ChevronRight />
 				</button>
 			</div>

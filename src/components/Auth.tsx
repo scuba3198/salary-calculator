@@ -51,8 +51,12 @@ export default function Auth() {
 				});
 				if (error) throw error;
 			}
-		} catch (err: any) {
-			setError(err.message);
+		} catch (err) {
+			if (err instanceof Error) {
+				setError(err.message);
+			} else {
+				setError("An unknown error occurred");
+			}
 		} finally {
 			setLoading(false);
 		}
@@ -103,6 +107,7 @@ export default function Auth() {
 				{isSignUp && (
 					<div>
 						<label
+							htmlFor="fullName"
 							style={{
 								display: "block",
 								marginBottom: "0.5rem",
@@ -112,6 +117,7 @@ export default function Auth() {
 							Full Name
 						</label>
 						<input
+							id="fullName"
 							type="text"
 							value={fullName}
 							onChange={(e) => setFullName(e.target.value)}
@@ -130,6 +136,7 @@ export default function Auth() {
 				)}
 				<div>
 					<label
+						htmlFor="email"
 						style={{
 							display: "block",
 							marginBottom: "0.5rem",
@@ -139,6 +146,7 @@ export default function Auth() {
 						Email
 					</label>
 					<input
+						id="email"
 						type="email"
 						value={email}
 						onChange={(e) => setEmail(e.target.value)}
@@ -156,6 +164,7 @@ export default function Auth() {
 				</div>
 				<div>
 					<label
+						htmlFor="password"
 						style={{
 							display: "block",
 							marginBottom: "0.5rem",
@@ -165,6 +174,7 @@ export default function Auth() {
 						Password
 					</label>
 					<input
+						id="password"
 						type="password"
 						value={password}
 						onChange={(e) => setPassword(e.target.value)}
@@ -185,6 +195,7 @@ export default function Auth() {
 				{isSignUp && (
 					<div>
 						<label
+							htmlFor="confirmPassword"
 							style={{
 								display: "block",
 								marginBottom: "0.5rem",
@@ -194,6 +205,7 @@ export default function Auth() {
 							Confirm Password
 						</label>
 						<input
+							id="confirmPassword"
 							type="password"
 							value={confirmPassword}
 							onChange={(e) => setConfirmPassword(e.target.value)}
@@ -272,6 +284,7 @@ export default function Auth() {
 				}}
 			>
 				<button
+					type="button"
 					onClick={() => {
 						setIsSignUp(!isSignUp);
 						setError(null);

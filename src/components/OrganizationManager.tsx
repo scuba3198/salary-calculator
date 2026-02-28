@@ -61,7 +61,7 @@ const OrganizationManager = ({ onClose }: OrganizationManagerProps) => {
 				}}
 			>
 				<h2>My Workspaces</h2>
-				<button onClick={onClose} className="icon-btn">
+				<button type="button" onClick={onClose} className="icon-btn">
 					<X size={20} />
 				</button>
 			</div>
@@ -78,14 +78,12 @@ const OrganizationManager = ({ onClose }: OrganizationManagerProps) => {
 				{organizations.map((org) => (
 					<div
 						key={org.id}
-						onClick={() => switchOrganization(org.id)}
 						className={`glass-card ${currentOrg?.id === org.id ? "active-org" : ""}`}
 						style={{
-							padding: "1rem",
+							padding: "0.75rem 1rem",
 							display: "flex",
 							alignItems: "center",
 							justifyContent: "space-between",
-							cursor: "pointer",
 							border:
 								currentOrg?.id === org.id ? "2px solid var(--primary)" : "1px solid var(--border)",
 							background:
@@ -93,34 +91,45 @@ const OrganizationManager = ({ onClose }: OrganizationManagerProps) => {
 						}}
 					>
 						{editingId === org.id ? (
-							<div
-								style={{ display: "flex", gap: "0.5rem", flex: 1 }}
-								onClick={(e: React.MouseEvent) => e.stopPropagation()}
-							>
+							<div style={{ display: "flex", gap: "0.5rem", flex: 1 }}>
 								<input
 									value={editName}
 									onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditName(e.target.value)}
-									autoFocus
 									style={{ flex: 1, padding: "0.25rem", borderRadius: "4px" }}
 								/>
-								<button onClick={saveEdit} className="icon-btn" style={{ color: "var(--success)" }}>
+								<button
+									type="button"
+									onClick={saveEdit}
+									className="icon-btn"
+									style={{ color: "var(--success)" }}
+								>
 									<Check size={16} />
 								</button>
-								<button onClick={() => setEditingId(null)} className="icon-btn">
+								<button type="button" onClick={() => setEditingId(null)} className="icon-btn">
 									<X size={16} />
 								</button>
 							</div>
 						) : (
 							<>
-								<div
+								<button
+									type="button"
+									onClick={() => switchOrganization(org.id)}
 									style={{
 										display: "flex",
 										alignItems: "center",
 										gap: "0.75rem",
+										flex: 1,
+										background: "transparent",
+										border: "none",
+										padding: 0,
+										cursor: "pointer",
+										textAlign: "left",
+										fontFamily: "inherit",
+										color: "inherit",
 									}}
 								>
 									<Briefcase size={20} color={org.color || undefined} />
-									<span style={{ fontWeight: "500" }}>{org.name}</span>
+									<span style={{ fontWeight: "500", flex: 1 }}>{org.name}</span>
 									{currentOrg?.id === org.id && (
 										<span
 											style={{
@@ -134,13 +143,11 @@ const OrganizationManager = ({ onClose }: OrganizationManagerProps) => {
 											Active
 										</span>
 									)}
-								</div>
-								<div style={{ display: "flex", gap: "0.5rem" }}>
+								</button>
+								<div style={{ display: "flex", gap: "0.5rem", marginLeft: "1rem" }}>
 									<button
-										onClick={(e: React.MouseEvent) => {
-											e.stopPropagation();
-											startEdit(org);
-										}}
+										type="button"
+										onClick={() => startEdit(org)}
 										className="icon-btn"
 										title="Rename"
 									>
@@ -156,6 +163,7 @@ const OrganizationManager = ({ onClose }: OrganizationManagerProps) => {
 										>
 											<span style={{ fontSize: "0.75rem", color: "var(--danger)" }}>Confirm?</span>
 											<button
+												type="button"
 												onClick={(e: React.MouseEvent) => confirmDelete(org.id, e)}
 												className="icon-btn"
 												title="Confirm Delete"
@@ -164,10 +172,8 @@ const OrganizationManager = ({ onClose }: OrganizationManagerProps) => {
 												<Check size={16} />
 											</button>
 											<button
-												onClick={(e: React.MouseEvent) => {
-													e.stopPropagation();
-													setDeleteConfirmationId(null);
-												}}
+												type="button"
+												onClick={() => setDeleteConfirmationId(null)}
 												className="icon-btn"
 												title="Cancel"
 											>
@@ -177,10 +183,8 @@ const OrganizationManager = ({ onClose }: OrganizationManagerProps) => {
 									) : (
 										organizations.length > 1 && (
 											<button
-												onClick={(e: React.MouseEvent) => {
-													e.stopPropagation();
-													setDeleteConfirmationId(org.id);
-												}}
+												type="button"
+												onClick={() => setDeleteConfirmationId(org.id)}
 												className="icon-btn"
 												title="Delete"
 												style={{ color: "var(--danger)" }}
@@ -199,10 +203,10 @@ const OrganizationManager = ({ onClose }: OrganizationManagerProps) => {
 			{isAdding ? (
 				<div style={{ marginTop: "1rem", display: "flex", gap: "0.5rem" }}>
 					<input
+						id="newOrgName"
 						value={newOrgName}
 						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewOrgName(e.target.value)}
 						placeholder="New Workspace Name (e.g. Freelance)"
-						autoFocus
 						style={{
 							flex: 1,
 							padding: "0.5rem",
@@ -211,6 +215,7 @@ const OrganizationManager = ({ onClose }: OrganizationManagerProps) => {
 						}}
 					/>
 					<button
+						type="button"
 						onClick={handleAdd}
 						style={{
 							padding: "0.5rem 1rem",
@@ -224,6 +229,7 @@ const OrganizationManager = ({ onClose }: OrganizationManagerProps) => {
 						Add
 					</button>
 					<button
+						type="button"
 						onClick={() => setIsAdding(false)}
 						className="icon-btn"
 						style={{
@@ -236,6 +242,7 @@ const OrganizationManager = ({ onClose }: OrganizationManagerProps) => {
 				</div>
 			) : (
 				<button
+					type="button"
 					onClick={() => setIsAdding(true)}
 					style={{
 						marginTop: "1rem",

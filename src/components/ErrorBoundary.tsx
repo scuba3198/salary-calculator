@@ -38,11 +38,12 @@ class ErrorBoundary extends React.Component<Props, State> {
 				>
 					<h1>Something went wrong.</h1>
 					<details style={{ whiteSpace: "pre-wrap", marginTop: "1rem" }}>
-						{this.state.error && this.state.error.toString()}
+						{this.state.error?.toString()}
 						<br />
-						{this.state.errorInfo && this.state.errorInfo.componentStack}
+						{this.state.errorInfo?.componentStack}
 					</details>
 					<button
+						type="button"
 						onClick={() => {
 							localStorage.clear();
 							window.location.reload();

@@ -2,9 +2,9 @@ import { Briefcase, LogIn, LogOut, Moon, Sun, X } from "lucide-react";
 import { useState } from "react";
 import Auth from "./components/Auth";
 import Calendar from "./components/Calendar";
+import InstallReminder from "./components/InstallReminder";
 import OrganizationManager from "./components/OrganizationManager";
 import SalaryStats from "./components/SalaryStats";
-import InstallReminder from "./components/InstallReminder";
 import { AppProvider, useAppStore } from "./store";
 import { supabase } from "./utils/supabase";
 
@@ -22,7 +22,7 @@ function AppContent() {
 				console.warn("Stale session detected, forcing logout");
 				forceLogout();
 			}
-		} catch (error: any) {
+		} catch (error) {
 			console.error("Logout error:", error);
 			forceLogout();
 		}
@@ -62,6 +62,7 @@ function AppContent() {
 				</div>
 				<div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
 					<button
+						type="button"
 						onClick={toggleTheme}
 						className="icon-btn"
 						title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
@@ -91,6 +92,7 @@ function AppContent() {
 							</span>
 							{currentOrg && (
 								<button
+									type="button"
 									onClick={() => setShowOrgManager(true)}
 									style={{
 										display: "flex",
@@ -113,6 +115,7 @@ function AppContent() {
 
 						{user ? (
 							<button
+								type="button"
 								onClick={handleLogout}
 								className="icon-btn"
 								title="Logout"
@@ -129,6 +132,7 @@ function AppContent() {
 							</button>
 						) : (
 							<button
+								type="button"
 								onClick={() => setShowAuth(true)}
 								style={{
 									display: "flex",
@@ -198,6 +202,7 @@ function AppContent() {
 				>
 					<div style={{ position: "relative", width: "100%", maxWidth: "400px" }}>
 						<button
+							type="button"
 							onClick={() => setShowAuth(false)}
 							style={{
 								position: "absolute",

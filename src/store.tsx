@@ -84,9 +84,129 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		}
 	}, [theme, user]);
 
-	// 2. Auth Listener
+	// 2. Auth Listener & Data Loader
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Only run once on mount
 	useEffect(() => {
-		const handleAuthChange = async (session: any) => {
+		const loadUserData = async (
+			userId: string,
+			dataToMerge: {
+				dates: MarkedDatesMap;
+				settings: Organization | null;
+			} | null = null,
+		) => {
+			try {
+				setIsSyncing(true);
+				setLoadingAuth(true);
+
+				// Fetch Organizations
+				const { data: orgs, error: orgError } = await supabase
+					.from("organizations")
+					.select("*")
+					.eq("user_id", userId)
+					.order("created_at", { ascending: true });
+
+				if (orgError) throw orgError;
+
+				let validOrgs: Organization[] = orgs || [];
+				let activeId: string | null = null;
+
+				// Handle Merging Guest Data into Primary Org
+				if (validOrgs.length === 0) {
+					// New user - create from guest settings or default
+					const defaults = dataToMerge?.settings || {
+						name: "Primary Job",
+						hourly_rate: 0,
+						daily_hours: 8,
+						tds_percentage: 1,
+					};
+					const { data: newOrg } = await supabase
+						.from("organizations")
+						.insert({
+							user_id: userId,
+							name: defaults.name,
+							hourly_rate: defaults.hourly_rate,
+							daily_hours: defaults.daily_hours,
+							tds_percentage: (defaults as { tds_percentage?: number }).tds_percentage || 1,
+						})
+						.select()
+						.single();
+					if (newOrg) {
+						validOrgs = [newOrg];
+						activeId = newOrg.id;
+					}
+				} else {
+					// Existing user
+					// Determine active org
+					const savedId = localStorage.getItem("last_org_id");
+					activeId = validOrgs.find((o) => o.id === savedId)?.id ?? validOrgs[0]?.id ?? null;
+				}
+
+				setOrganizations(validOrgs);
+				setCurrentOrgId(activeId);
+				if (activeId) localStorage.setItem("last_org_id", activeId);
+
+				// Fetch Attendance for Active Org
+				const remoteDates: MarkedDatesMap = {};
+				if (activeId) {
+					const { data: attendance, error } = await supabase
+						.from("attendance")
+						.select("date_str, daily_hours")
+						.eq("organization_id", activeId);
+
+					if (!error && attendance) {
+						attendance.forEach((row) => {
+							remoteDates[row.date_str] = row.daily_hours ?? 8;
+						});
+					}
+				}
+
+				// MERGE GUEST DATES
+				if (dataToMerge?.dates && activeId) {
+					const datesToInsert: {
+						user_id: string;
+						organization_id: string;
+						date_str: string;
+						daily_hours: number;
+					}[] = [];
+					Object.entries(dataToMerge.dates).forEach(([dateStr, dayHours]) => {
+						if (!remoteDates[dateStr]) {
+							// Only insert if not already present
+							datesToInsert.push({
+								user_id: userId,
+								organization_id: activeId,
+								date_str: dateStr,
+								daily_hours: dayHours,
+							});
+							remoteDates[dateStr] = dayHours; // Update local view immediately
+						}
+					});
+
+					if (datesToInsert.length > 0) {
+						await supabase.from("attendance").insert(datesToInsert);
+						console.log(`Merged ${datesToInsert.length} guest dates.`);
+					}
+				}
+
+				setMarkedDates(remoteDates);
+
+				// Fetch Theme from user_settings (if exists)
+				const { data: settings } = await supabase
+					.from("user_settings")
+					.select("theme")
+					.eq("user_id", userId)
+					.single();
+				if (settings?.theme) setTheme(settings.theme as Theme);
+
+				hasLoadedFromRemote.current = true;
+			} catch (err) {
+				console.error("Error loading user data:", err);
+			} finally {
+				setLoadingAuth(false);
+				setIsSyncing(false);
+			}
+		};
+
+		const handleAuthChange = async (session: { user: User | null } | null) => {
 			if (!session?.user) {
 				// GUEST MODE INITIALIZATION
 				setUser(null);
@@ -147,7 +267,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		return () => subscription.unsubscribe();
 	}, []);
 
-	// 2.5. Sync guest data to ref when in guest mode
+	// Sync guest data to ref when in guest mode
 	useEffect(() => {
 		if (isGuestModeRef.current && currentOrgId === "guest") {
 			guestDataRef.current = {
@@ -157,118 +277,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		}
 	}, [markedDates, organizations, currentOrgId]);
 
-	// 3. User Data Handler
-	const loadUserData = async (
-		userId: string,
-		dataToMerge: {
-			dates: MarkedDatesMap;
-			settings: Organization | null;
-		} | null = null,
-	) => {
-		try {
-			setIsSyncing(true);
-			setLoadingAuth(true);
-
-			// Fetch Organizations
-			const { data: orgs, error: orgError } = await supabase
-				.from("organizations")
-				.select("*")
-				.eq("user_id", userId)
-				.order("created_at", { ascending: true });
-
-			if (orgError) throw orgError;
-
-			let validOrgs: Organization[] = orgs || [];
-			let activeId: string | null = null;
-
-			// Handle Merging Guest Data into Primary Org
-			if (validOrgs.length === 0) {
-				// New user - create from guest settings or default
-				const defaults = dataToMerge?.settings || {
-					name: "Primary Job",
-					hourly_rate: 0,
-					daily_hours: 8,
-					tds_percentage: 1,
-				};
-				const { data: newOrg } = await supabase
-					.from("organizations")
-					.insert({
-						user_id: userId,
-						name: defaults.name,
-						hourly_rate: defaults.hourly_rate,
-						daily_hours: defaults.daily_hours,
-						tds_percentage: (defaults as any).tds_percentage || 1,
-					})
-					.select()
-					.single();
-				if (newOrg) {
-					validOrgs = [newOrg];
-					activeId = newOrg.id;
-				}
-			} else {
-				// Existing user
-				// Determine active org
-				const savedId = localStorage.getItem("last_org_id");
-				activeId = validOrgs.find((o) => o.id === savedId)?.id ?? validOrgs[0]?.id ?? null;
-			}
-
-			setOrganizations(validOrgs);
-			setCurrentOrgId(activeId);
-			if (activeId) localStorage.setItem("last_org_id", activeId);
-
-			// Fetch Attendance for Active Org
-			const remoteDates: MarkedDatesMap = {};
-			if (activeId) {
-				const { data: attendance, error } = await supabase
-					.from("attendance")
-					.select("date_str, daily_hours")
-					.eq("organization_id", activeId);
-
-				if (!error && attendance) {
-					attendance.forEach((row) => (remoteDates[row.date_str] = row.daily_hours ?? 8));
-				}
-			}
-
-			// MERGE GUEST DATES
-			if (dataToMerge?.dates && activeId) {
-				const datesToInsert: any[] = [];
-				Object.entries(dataToMerge.dates).forEach(([dateStr, dayHours]) => {
-					if (!remoteDates[dateStr]) {
-						// Only insert if not already present
-						datesToInsert.push({
-							user_id: userId,
-							organization_id: activeId,
-							date_str: dateStr,
-							daily_hours: dayHours,
-						});
-						remoteDates[dateStr] = dayHours; // Update local view immediately
-					}
-				});
-
-				if (datesToInsert.length > 0) {
-					await supabase.from("attendance").insert(datesToInsert);
-					console.log(`Merged ${datesToInsert.length} guest dates.`);
-				}
-			}
-
-			setMarkedDates(remoteDates);
-
-			// Fetch Theme from user_settings (if exists)
-			const { data: settings } = await supabase
-				.from("user_settings")
-				.select("theme")
-				.eq("user_id", userId)
-				.single();
-			if (settings?.theme) setTheme(settings.theme as Theme);
-
-			hasLoadedFromRemote.current = true;
-		} catch (err) {
-			console.error("Error loading user data:", err);
-		} finally {
-			setLoadingAuth(false);
-			setIsSyncing(false);
-		}
-	};
+	// --- Actions ---
 
 	const fetchAttendance = async (orgId: string) => {
 		const { data: attendance, error } = await supabase
@@ -278,7 +287,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 		if (!error && attendance) {
 			const dates: MarkedDatesMap = {};
-			attendance.forEach((row) => (dates[row.date_str] = row.daily_hours ?? 8));
+			attendance.forEach((row) => {
+				dates[row.date_str] = row.daily_hours ?? 8;
+			});
 			setMarkedDates(dates);
 		}
 	};
@@ -286,8 +297,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	const toggleTheme = () => {
 		setTheme((prev) => (prev === "dark" ? "light" : "dark"));
 	};
-
-	// --- Actions ---
 
 	const switchOrganization = async (orgId: string) => {
 		if (orgId === currentOrgId) return;
@@ -339,10 +348,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		if (!user || id === "guest") return; // Stop here for guests or guest org
 
 		// Debounce actual DB call if needed? For now, direct simple update.
-		const { error } = await supabase
-			.from("organizations")
-			.update(updates as any)
-			.eq("id", id);
+		const { error } = await supabase.from("organizations").update(updates).eq("id", id);
 		if (error) {
 			console.error("Update failed", error);
 		}
@@ -364,7 +370,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 		if (attendanceError) {
 			console.error("Failed to delete attendance records:", attendanceError);
-			alert("Failed to delete organization's attendance records: " + attendanceError.message);
+			alert(`Failed to delete organization's attendance records: ${attendanceError.message}`);
 			return;
 		}
 
@@ -376,7 +382,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 		if (error) {
 			console.error("Delete failed:", error);
-			alert("Failed to delete organization: " + error.message);
+			alert(`Failed to delete organization: ${error.message}`);
 		} else if (count === 0) {
 			alert("Failed to delete: Organization not found or permission denied (0 rows affected).");
 		} else {

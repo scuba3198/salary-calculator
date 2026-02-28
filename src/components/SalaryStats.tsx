@@ -1,5 +1,4 @@
 import { Banknote, Clock } from "lucide-react";
-import {} from "react"; // or just remove it
 import { useAppStore } from "../store";
 
 const SalaryStats = () => {
@@ -96,8 +95,9 @@ const SalaryStats = () => {
 					}}
 				>
 					<div>
-						<label>Hourly Rate (Rs)</label>
+						<label htmlFor="hourlyRate">Hourly Rate (Rs)</label>
 						<input
+							id="hourlyRate"
 							type="number"
 							min="0"
 							value={hourlyRate || ""}
@@ -111,8 +111,9 @@ const SalaryStats = () => {
 						/>
 					</div>
 					<div>
-						<label>Daily Hours</label>
+						<label htmlFor="dailyHours">Daily Hours</label>
 						<input
+							id="dailyHours"
 							type="number"
 							min="0"
 							max="24"
@@ -129,8 +130,9 @@ const SalaryStats = () => {
 						/>
 					</div>
 					<div>
-						<label>TDS (%)</label>
+						<label htmlFor="tdsPercentage">TDS (%)</label>
 						<input
+							id="tdsPercentage"
 							type="number"
 							min="0"
 							max="100"
