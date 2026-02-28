@@ -4,6 +4,7 @@ import Auth from "./components/Auth";
 import Calendar from "./components/Calendar";
 import OrganizationManager from "./components/OrganizationManager";
 import SalaryStats from "./components/SalaryStats";
+import InstallReminder from "./components/InstallReminder";
 import { AppProvider, useAppStore } from "./store";
 import { supabase } from "./utils/supabase";
 
@@ -29,6 +30,7 @@ function AppContent() {
 
 	return (
 		<div className="app-container" style={{ position: "relative" }}>
+			<InstallReminder />
 			{!user && (
 				<div
 					style={{
