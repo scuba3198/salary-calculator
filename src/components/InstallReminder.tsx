@@ -16,28 +16,34 @@ export default function InstallReminder() {
             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
             const isStandalone = window.matchMedia("(display-mode: standalone)").matches ||
                 (navigator as any).standalone;
-            const isDismissed = localStorage.getItem("pwa-reminder-dismissed") === "true";
 
-            if (isMobile && !isStandalone && !isDismissed) {
+            if (isMobile && !isStandalone) {
                 setIsVisible(true);
             }
         };
 
+        const handleAppInstalled = () => {
+            // Clear the deferredPrompt and hide the banner
+            setDeferredPrompt(null);
+            setIsVisible(false);
+            console.log("PWA was installed");
+        };
+
         window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+        window.addEventListener("appinstalled", handleAppInstalled);
 
         // Fallback detection for browsers that don't support beforeinstallprompt (like iOS Safari)
-        // but we still want to show the reminder.
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         const isStandalone = window.matchMedia("(display-mode: standalone)").matches ||
             (navigator as any).standalone;
-        const isDismissed = localStorage.getItem("pwa-reminder-dismissed") === "true";
 
-        if (isMobile && !isStandalone && !isDismissed && !deferredPrompt) {
+        if (isMobile && !isStandalone && !deferredPrompt) {
             setIsVisible(true);
         }
 
         return () => {
             window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+            window.removeEventListener("appinstalled", handleAppInstalled);
         };
     }, [deferredPrompt]);
 
@@ -48,20 +54,22 @@ export default function InstallReminder() {
             // Wait for the user to respond to the prompt
             const { outcome } = await deferredPrompt.userChoice;
             console.log(`User response to the install prompt: ${outcome}`);
-            // We've used the prompt, and can't use it again, throw it away
-            setDeferredPrompt(null);
-            setIsVisible(false);
+
+            if (outcome === "accepted") {
+                // The appinstalled event will hide the banner
+                setDeferredPrompt(null);
+            }
         } else {
             // Fallback: Just dismiss and hope they use the browser menu
             // On iOS, this is the only way (remind them to "Add to Home Screen")
             alert("To install: Tap the browser menu (usually three dots or share icon) and select 'Install app' or 'Add to Home Screen'.");
-            dismiss();
+            setIsVisible(false);
         }
     };
 
     const dismiss = () => {
+        // Just hide it for this session as requested
         setIsVisible(false);
-        localStorage.setItem("pwa-reminder-dismissed", "true");
     };
 
     if (!isVisible) return null;
