@@ -1,183 +1,336 @@
 :root {
-	--glass-bg: rgba(30, 30, 30, 0.95);
-	--glass-border: rgba(255, 255, 255, 0.2);
-	--glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-	--primary-color: #6c5ce7;
-	--accent-color: #a29bfe;
-	--text-primary: #ffffff;
-	--text-secondary: #dfe6e9;
-	--success: #00cec9;
-	--danger: #ff7675;
-	--bg-gradient: linear-gradient(45deg, #2d3436, #000000);
+	/* Editorial Minimalist Canvas */
+	--canvas: #ffffff;
+	--text-main: #000000;
+	--accent: #002fa7;
+	/* Yves Klein Blue */
+	--accent-muted: rgba(0, 47, 167, 0.1);
+	--border-light: rgba(0, 0, 0, 0.1);
+	--surface: #ffffff;
+
+	--font-display: "Fraunces", serif;
+	--font-body: "Manrope", sans-serif;
 }
 
-[data-theme="light"] {
-	--glass-bg: rgba(255, 255, 255, 0.85);
-	/* Highly opaque white for light mode */
-	--glass-border: rgba(0, 0, 0, 0.1);
-	--glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-	--primary-color: #6c5ce7;
-	--accent-color: #6c5ce7;
-	/* Darker accent for contrast */
-	--text-primary: #2d3436;
-	--text-secondary: #636e72;
-	--bg-gradient: linear-gradient(45deg, #dfe6e9, #ffffff);
-	--background: rgba(255, 255, 255, 0.9);
-	/* Input background */
-	--surface: rgba(255, 255, 255, 0.95);
-	--border: rgba(0, 0, 0, 0.1);
+[data-theme="dark"] {
+	--canvas: #040404;
+	/* Pitch black */
+	--text-main: #ffffff;
+	--accent: #5a81ff;
+	/* Brighter blue for contrast on black */
+	--accent-muted: rgba(90, 129, 255, 0.2);
+	--border-light: rgba(255, 255, 255, 0.15);
+	--surface: #040404;
 }
 
+/* Semantic compatible variables for existing components */
 :root {
-	/* Compatible variables for new components */
-	--surface: var(--glass-bg);
-	--border: var(--glass-border);
-	--primary: var(--primary-color);
-	--primary-light: rgba(108, 92, 231, 0.2);
-	--background: rgba(0, 0, 0, 0.5);
-	--text: var(--text-primary);
+	--surface: var(--canvas);
+	--border: var(--border-light);
+	--primary: var(--text-main);
+	--primary-light: var(--accent-muted);
+	--background: var(--canvas);
+	--text: var(--text-main);
+	--text-primary: var(--text-main);
+	--text-secondary: rgba(0, 0, 0, 0.6);
+	--success: var(--text-main);
+	--danger: var(--accent);
 }
 
+[data-theme="dark"] {
+	--text-secondary: rgba(255, 255, 255, 0.6);
+}
+
+/* Base Reset & Typography */
 body {
 	margin: 0;
-	font-family: "Inter", sans-serif;
-	background: var(--bg-gradient);
-	color: var(--text-primary);
+	font-family: var(--font-body);
+	background-color: var(--canvas);
+	color: var(--text-main);
 	min-height: 100vh;
+	transition:
+		background-color 0s,
+		color 0.4s ease;
+	overflow-x: hidden;
+	position: relative;
+}
+
+/* Grain Overlay for Texture */
+.grain-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
+	pointer-events: none;
+	z-index: 9999;
+	opacity: 0.04;
+	background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+[data-theme="dark"] .grain-overlay {
+	opacity: 0.08;
+	filter: invert(1);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	font-family: var(--font-display);
+	font-weight: 300;
+	margin: 0;
+	letter-spacing: -0.02em;
 }
 
 #root {
 	width: 100%;
 }
 
-.glass-card {
-	background: var(--glass-bg);
-	backdrop-filter: blur(12px);
-	-webkit-backdrop-filter: blur(12px);
-	border: 1px solid var(--glass-border);
-	box-shadow: var(--glass-shadow);
-	border-radius: 20px;
-	padding: 1.5rem;
-	transition:
-		transform 0.3s ease,
-		box-shadow 0.3s ease;
+/* Layout Containers - Overriding the old center approach */
+.minimal-container {
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: 4rem 2rem;
+	display: flex;
+	flex-direction: column;
+	gap: 4rem;
 }
 
-.glass-card:hover {
-	transform: translateY(-4px);
-	box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.45);
+/* Structural Components (replacing glass-card) */
+.editorial-panel {
+	background: transparent;
+	padding: 0;
+	border-top: 1px solid var(--border-light);
+	padding-top: 2rem;
+	transition: opacity 0.3s ease;
 }
 
-/* Calendar Grid */
+/* App Header */
+.app-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	margin-bottom: 2rem;
+	animation: reveal-up 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.app-title-area h1 {
+	font-size: 3rem;
+	line-height: 1.1;
+	margin-bottom: 1rem;
+}
+
+.app-title-area p {
+	font-weight: 300;
+	opacity: 0.85;
+	max-width: 400px;
+	line-height: 1.6;
+}
+
+/* Calendar Layout */
+.calendar-wrapper {
+	animation: reveal-up 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+	animation-delay: 0.1s;
+	opacity: 0;
+}
+
 .calendar-grid {
 	display: grid;
 	grid-template-columns: repeat(7, 1fr);
-	gap: 0.5rem;
-	text-align: center;
+	gap: 1.5rem 0.5rem;
+	text-align: left;
+	margin-top: 2rem;
 }
 
 .calendar-header {
-	font-weight: bold;
-	color: var(--accent-color);
-	padding-bottom: 0.5rem;
+	font-family: var(--font-body);
+	font-weight: 500;
+	font-size: 0.8rem;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: var(--text-main);
+	opacity: 0.8;
+	padding-bottom: 1rem;
+	border-bottom: 1px solid var(--border-light);
+	margin-bottom: 1rem;
 }
 
 .calendar-day {
 	aspect-ratio: 1;
 	display: flex;
-	align-items: center;
-	justify-content: center;
-	border-radius: 50%;
+	align-items: flex-start;
+	justify-content: flex-start;
+	padding: 0.5rem;
+	font-family: var(--font-display);
+	font-size: 1.5rem;
+	font-weight: 300;
 	cursor: pointer;
-	transition: all 0.2s ease;
+	transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 	user-select: none;
+	border: 1px solid transparent;
 }
 
-.calendar-day:hover:not(.disabled) {
-	background: rgba(255, 255, 255, 0.2);
+.calendar-day:hover:not(.disabled):not(.active) {
+	background: var(--text-main);
+	color: var(--canvas);
 }
 
 .calendar-day.active {
-	background: var(--success);
-	color: #000;
-	font-weight: bold;
-	box-shadow: 0 0 10px var(--success);
+	background: var(--accent);
+	color: #ffffff;
+	border-radius: 0;
 }
 
 .calendar-day.today {
-	border: 2px solid var(--accent-color);
+	font-weight: 900;
 }
 
 .calendar-day.disabled {
+	opacity: 0.4;
 	cursor: default;
 }
 
 .calendar-day.is-holiday {
-	color: var(--danger);
-	font-weight: bold;
-	text-shadow: 0 0 8px rgba(255, 118, 117, 0.4);
+	color: #e03c31;
+	/* striking Vermilion */
+	font-weight: 600;
 }
 
-/* Ensure holiday color doesn't override active state text color which needs to be dark */
 .calendar-day.active.is-holiday {
-	color: #000;
+	color: #ffffff;
 }
 
-/* Stats */
+/* Stats Layout */
 .stats-container {
-	display: flex;
-	flex-direction: column;
-	gap: 1.5rem;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 4rem;
+	animation: reveal-up 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+	animation-delay: 0.2s;
+	opacity: 0;
 }
 
 .stat-box {
-	text-align: center;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	border-top: 1px solid var(--border-light);
+	padding-top: 1rem;
 }
 
+.stat-box span.label {
+	font-family: var(--font-body);
+	font-size: 0.8rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	opacity: 0.8;
+	margin-bottom: 0.5rem;
+}
+
+.stat-box .value {
+	font-family: var(--font-display);
+	font-size: 4rem;
+	line-height: 1;
+	word-break: break-word;
+	/* Ensure large numbers fit */
+}
+
+/* Inputs */
 input {
 	width: 100%;
-	padding: 0.75rem;
-	border-radius: 8px;
-	border: 1px solid var(--glass-border);
-	background: rgba(0, 0, 0, 0.2);
-	color: var(--text-primary);
-	margin-top: 0.5rem;
-	font-size: 1rem;
+	padding: 1rem 0;
+	border: none;
+	border-bottom: 1px solid var(--border-light);
+	background: transparent;
+	color: var(--text-main);
+	font-family: var(--font-body);
+	font-size: 1.25rem;
+	transition: border-color 0.3s ease;
+	border-radius: 0;
 }
 
 input:focus {
 	outline: none;
-	border-color: var(--accent-color);
+	border-bottom-color: var(--accent);
 }
 
-/* Utils */
+/* Hide default number arrows */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+input[type="number"] {
+	-moz-appearance: textfield;
+}
+
+/* UI Elements */
 .icon-btn {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	transition: all 0.2s ease;
-	border: 1px solid var(--glass-border);
-	background: var(--glass-bg);
+	background: transparent;
+	border: none;
 	cursor: pointer;
-	color: var(--text-primary);
-	min-width: 40px;
-	min-height: 40px;
+	color: var(--text-main);
+	transition:
+		opacity 0.2s ease,
+		transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	padding: 0.5rem;
 }
 
 .icon-btn:hover {
-	background: rgba(255, 255, 255, 0.1);
-	transform: translateY(-1px);
-	border-color: var(--accent-color);
+	opacity: 0.4;
 }
 
 .icon-btn:active {
-	transform: translateY(0);
+	transform: scale(0.95);
 }
 
 .flex-center {
 	display: flex;
 	justify-content: center;
 	align-items: center;
+}
+
+.primary-btn {
+	background: var(--text-main);
+	color: var(--canvas);
+	border: none;
+	padding: 1rem 2rem;
+	font-family: var(--font-body);
+	font-weight: 500;
+	font-size: 0.9rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	cursor: pointer;
+	transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.primary-btn:hover {
+	background: var(--accent);
+	color: #ffffff;
+}
+
+/* Helpers for components */
+.glass-card {
+	/* Backwards compatibility reset */
+	background: transparent;
+	backdrop-filter: none;
+	border: none;
+	box-shadow: none;
+	border-radius: 0;
+	padding: 0;
+	transition: none;
+}
+
+.glass-card:hover {
+	transform: none;
+	box-shadow: none;
 }
 
 .mb-4 {
@@ -188,34 +341,67 @@ input:focus {
 	font-size: 1.25rem;
 }
 
+@keyframes reveal-up {
+	0% {
+		opacity: 0;
+		transform: translateY(30px);
+	}
+
+	100% {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
-	.glass-card {
-		padding: 1rem;
+	.minimal-container {
+		padding: 2rem 1rem;
+		gap: 3rem;
+	}
+
+	.app-header {
+		flex-direction: column;
+		gap: 2rem;
+	}
+
+	.app-title-area h1 {
+		font-size: 2.25rem;
 	}
 
 	.calendar-day {
-		font-size: 0.9rem;
-	}
-
-	.calendar-header {
-		font-size: 0.9rem;
-	}
-
-	h1 {
-		font-size: 1.75rem;
-	}
-
-	h2 {
-		font-size: 1.25rem;
-	}
-
-	input {
-		padding: 0.6rem;
-		font-size: 0.9rem;
+		font-size: 1.1rem;
+		padding: 0.25rem;
 	}
 
 	.stats-container {
-		gap: 1rem;
+		grid-template-columns: 1fr;
+		gap: 3rem;
 	}
+
+	.stat-box span.value {
+		font-size: 3rem;
+	}
+
+	input {
+		font-size: 1rem;
+	}
+}
+
+/* Scrollbar Aesthetics */
+::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+
+::-webkit-scrollbar-track {
+	background: var(--canvas);
+}
+
+::-webkit-scrollbar-thumb {
+	background: var(--border-light);
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: var(--text-secondary);
 }

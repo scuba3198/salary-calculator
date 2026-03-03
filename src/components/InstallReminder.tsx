@@ -1,5 +1,6 @@
 import { Smartphone, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useAppStore } from "../store";
 
 // Register the beforeinstallprompt event type
 interface BeforeInstallPromptEvent extends Event {
@@ -12,6 +13,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export default function InstallReminder() {
+	const { setGlobalAlert } = useAppStore();
 	const [isVisible, setIsVisible] = useState(false);
 	const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
@@ -76,7 +78,7 @@ export default function InstallReminder() {
 		} else {
 			// Fallback: Just dismiss and hope they use the browser menu
 			// On iOS, this is the only way (remind them to "Add to Home Screen")
-			alert(
+			setGlobalAlert(
 				"To install: Tap the browser menu (usually three dots or share icon) and select 'Install app' or 'Add to Home Screen'.",
 			);
 			setIsVisible(false);

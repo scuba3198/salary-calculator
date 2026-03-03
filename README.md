@@ -76,6 +76,17 @@ The application is built on a "Lean-Core" architecture, ensuring maximum perform
 
 ---
 
+## 🧪 Testing Architecture
+
+We believe in a rigorous, blazingly fast testing pipeline to guarantee stability and prevent regressions:
+
+- **Unit & Core Logic**: Powered by **Vitest**. Complex Nepal tax deductions, hours, and TDS math are isolated into dependency-free pure functions for millisecond execution.
+- **Component DOM & Accessibility**: Validated via **React Testing Library** and **jest-axe**. Ensures semantic HTML, optimal contrast ratios, and flawless rendering without rendering violations.
+- **End-to-End (E2E)**: Powered by **Playwright**. Employs real browser engines (Chromium, Firefox, WebKit) to concurrently simulate live guest user journeys, PWA manifest injections, and Modal lifecycle events.
+- **Continuous Integration**: A secure `.github/workflows/ci.yml` pipeline automatically triggers parallel formatting checks, linting, tests, and production build verification on every push and pull request.
+
+---
+
 ## 🚀 Speed Start
 
 ### 1. Zero-Config Install

@@ -64,35 +64,50 @@ const Calendar = () => {
 	}
 
 	return (
-		<div className="glass-card">
+		<div>
 			<div
 				style={{
 					display: "flex",
 					justifyContent: "space-between",
 					alignItems: "center",
-					marginBottom: "1rem",
+					marginBottom: "2rem",
+					paddingBottom: "1rem",
+					borderBottom: "1px solid var(--border-light)",
 				}}
 			>
-				<button type="button" onClick={handlePrev}>
-					<ChevronLeft />
+				<button type="button" onClick={handlePrev} className="icon-btn">
+					<ChevronLeft size={32} strokeWidth={1} />
 				</button>
-				<h2>
-					{getNepaliMonthName(viewMonth)} {viewYear}
-					{isSyncing && (
-						<span
-							style={{
-								fontSize: "0.8rem",
-								marginLeft: "1rem",
-								color: "var(--accent-color)",
-								fontWeight: "normal",
-							}}
-						>
-							Syncing...
-						</span>
-					)}
-				</h2>
-				<button type="button" onClick={handleNext}>
-					<ChevronRight />
+				<div
+					style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}
+				>
+					<h2
+						style={{
+							fontSize: "3rem",
+							lineHeight: "1",
+							textTransform: "uppercase",
+							letterSpacing: "0.02em",
+						}}
+					>
+						{getNepaliMonthName(viewMonth)}
+					</h2>
+					<span
+						style={{
+							fontFamily: "var(--font-body)",
+							letterSpacing: "0.2em",
+							opacity: 0.5,
+							textTransform: "uppercase",
+							fontSize: "0.9rem",
+						}}
+					>
+						{viewYear}
+						{isSyncing && (
+							<span style={{ color: "var(--accent)", marginLeft: "0.5rem" }}>[SYNC]</span>
+						)}
+					</span>
+				</div>
+				<button type="button" onClick={handleNext} className="icon-btn">
+					<ChevronRight size={32} strokeWidth={1} />
 				</button>
 			</div>
 
@@ -103,9 +118,7 @@ const Calendar = () => {
 					</div>
 				))}
 			</div>
-			<div className="calendar-grid" style={{ marginTop: "0.5rem" }}>
-				{days}
-			</div>
+			<div className="calendar-grid">{days}</div>
 		</div>
 	);
 };

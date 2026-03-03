@@ -1,4 +1,4 @@
-import { Briefcase, LogIn, LogOut, Moon, Sun, X } from "lucide-react";
+import { AlertTriangle, Briefcase, LogIn, LogOut, Moon, Sun, X } from "lucide-react";
 import { useState } from "react";
 import Auth from "./components/Auth";
 import Calendar from "./components/Calendar";
@@ -9,7 +9,17 @@ import { AppProvider, useAppStore } from "./store";
 import { supabase } from "./utils/supabase";
 
 function AppContent() {
-	const { user, theme, toggleTheme, forceLogout, currentOrg } = useAppStore();
+	const {
+		user,
+		theme,
+		toggleTheme,
+		forceLogout,
+		currentOrg,
+		globalAlert,
+		setGlobalAlert,
+		globalConfirm,
+		setGlobalConfirm,
+	} = useAppStore();
 	const [showAuth, setShowAuth] = useState(false);
 	const [showOrgManager, setShowOrgManager] = useState(false);
 
@@ -29,229 +39,324 @@ function AppContent() {
 	};
 
 	return (
-		<div className="app-container" style={{ position: "relative" }}>
-			<InstallReminder />
+		<>
 			{!user && (
 				<div
 					style={{
-						background: "var(--accent-color)",
-						color: "white",
-						padding: "0.5rem",
+						background: "var(--text-main)",
+						color: "var(--canvas)",
+						padding: "0.5rem 1rem",
 						textAlign: "center",
-						fontSize: "0.875rem",
-						fontWeight: "500",
+						fontSize: "0.75rem",
+						fontWeight: "600",
+						textTransform: "uppercase",
+						letterSpacing: "0.05em",
+						width: "100%",
+						position: "relative",
+						zIndex: 50,
 					}}
 				>
-					Guest Mode: Data is unsaved and will be lost on refresh. Login to save your progress.
+					Guest Mode: Data is unsaved. Login to save your progress.
 				</div>
 			)}
-			<header
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-					marginBottom: "2rem",
-					marginTop: !user ? "1rem" : "0",
-					flexWrap: "wrap",
-					gap: "1rem",
-				}}
-			>
-				<div>
-					<h1>Nepali Salary Calculator</h1>
-					<p>Track your work days and calculate your monthly earnings.</p>
-				</div>
-				<div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-					<button
-						type="button"
-						onClick={toggleTheme}
-						className="icon-btn"
-						title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
-						style={{
-							padding: "0.5rem",
-							borderRadius: "0.5rem",
-							border: "1px solid var(--border)",
-							background: "var(--surface)",
-							cursor: "pointer",
-							color: "var(--text)",
-						}}
-					>
-						{theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
-					</button>
+			<div className="minimal-container" style={{ position: "relative" }}>
+				<div className="grain-overlay" />
+				<InstallReminder />
+				<header className="app-header">
+					<div className="app-title-area">
+						<h1>
+							Nepali Salary
+							<br />
+							Calculator
+						</h1>
+						<p>Track your work days and calculate your monthly earnings.</p>
+					</div>
+					<div style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
+						<button
+							type="button"
+							onClick={toggleTheme}
+							className="icon-btn"
+							title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+						>
+							{theme === "dark" ? <Sun size={24} /> : <Moon size={24} />}
+						</button>
 
-					<div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-						<div style={{ textAlign: "right" }}>
-							<span
-								style={{
-									display: "block",
-									fontSize: "0.875rem",
-									fontWeight: "bold",
-								}}
-							>
-								{(user?.user_metadata as { full_name?: string })?.full_name ||
-									(user ? "User" : "Guest User")}
-							</span>
-							{currentOrg && (
-								<button
-									type="button"
-									onClick={() => setShowOrgManager(true)}
+						<div style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
+							<div style={{ textAlign: "right" }}>
+								<span
 									style={{
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "flex-end",
-										gap: "0.25rem",
-										fontSize: "0.75rem",
-										color: "var(--accent-color)",
-										background: "none",
-										border: "none",
-										cursor: "pointer",
-										padding: 0,
+										display: "block",
+										fontSize: "0.9rem",
+										fontWeight: "500",
+										letterSpacing: "0.02em",
 									}}
 								>
-									<Briefcase size={12} /> {currentOrg.name}
-									{!user && <span style={{ marginLeft: "4px", opacity: 0.7 }}>(Draft)</span>}
+									{(user?.user_metadata as { full_name?: string })?.full_name ||
+										(user ? "User" : "Guest")}
+								</span>
+								{currentOrg && (
+									<button
+										type="button"
+										onClick={() => setShowOrgManager(true)}
+										style={{
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "flex-end",
+											gap: "0.5rem",
+											fontSize: "0.75rem",
+											color: "var(--accent)",
+											background: "none",
+											border: "none",
+											cursor: "pointer",
+											padding: "0.25rem 0",
+											textTransform: "uppercase",
+											letterSpacing: "0.05em",
+										}}
+									>
+										<Briefcase size={14} /> {currentOrg.name}
+										{!user && <span style={{ opacity: 1, fontWeight: "bold" }}>(Draft)</span>}
+									</button>
+								)}
+							</div>
+
+							{user ? (
+								<button type="button" onClick={handleLogout} className="icon-btn" title="Logout">
+									<LogOut size={24} />
+								</button>
+							) : (
+								<button
+									type="button"
+									onClick={() => setShowAuth(true)}
+									className="primary-btn"
+									style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}
+								>
+									<LogIn size={18} /> Login
 								</button>
 							)}
 						</div>
-
-						{user ? (
-							<button
-								type="button"
-								onClick={handleLogout}
-								className="icon-btn"
-								title="Logout"
-								style={{
-									padding: "0.5rem",
-									borderRadius: "0.5rem",
-									border: "1px solid var(--border)",
-									background: "var(--surface)",
-									cursor: "pointer",
-									color: "var(--text)",
-								}}
-							>
-								<LogOut size={20} />
-							</button>
-						) : (
-							<button
-								type="button"
-								onClick={() => setShowAuth(true)}
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: "0.5rem",
-									padding: "0.5rem 1rem",
-									borderRadius: "0.5rem",
-									border: "none",
-									background: "var(--primary)",
-									color: "white",
-									cursor: "pointer",
-									fontWeight: "500",
-								}}
-							>
-								<LogIn size={18} /> Login
-							</button>
-						)}
 					</div>
-				</div>
-			</header>
+				</header>
 
-			<div
-				style={{
-					maxWidth: "800px",
-					margin: "0 auto",
-					display: "flex",
-					flexDirection: "column",
-					gap: "1.5rem",
-				}}
-			>
-				<Calendar />
-				<SalaryStats />
-			</div>
+				<main style={{ display: "flex", flexDirection: "column", gap: "4rem" }}>
+					<div className="calendar-wrapper editorial-panel">
+						<Calendar />
+					</div>
+					<div className="editorial-panel">
+						<SalaryStats />
+					</div>
+				</main>
 
-			<footer
-				style={{
-					marginTop: "3rem",
-					padding: "1rem",
-					textAlign: "center",
-					fontSize: "0.875rem",
-					color: "var(--text-secondary)",
-					borderTop: "1px solid var(--border)",
-				}}
-			>
-				Made with{" "}
-				<span role="img" aria-label="love">
-					❤️
-				</span>{" "}
-				by Mumukshu D.C
-			</footer>
-
-			{showAuth && !user && (
-				<div
+				<footer
 					style={{
-						position: "fixed",
-						top: 0,
-						left: 0,
-						right: 0,
-						bottom: 0,
-						background: "rgba(0,0,0,0.5)",
-						zIndex: 1000,
-						display: "flex",
-						justifyContent: "center",
-						alignItems: "center",
-						padding: "1rem",
+						marginTop: "4rem",
+						paddingTop: "2rem",
+						borderTop: "1px solid var(--border-light)",
+						textAlign: "left",
+						fontSize: "0.8rem",
+						textTransform: "uppercase",
+						letterSpacing: "0.05em",
+						color: "var(--text-main)",
+						opacity: 0.8,
 					}}
 				>
-					<div style={{ position: "relative", width: "100%", maxWidth: "400px" }}>
-						<button
-							type="button"
-							onClick={() => setShowAuth(false)}
-							style={{
-								position: "absolute",
-								top: "1rem",
-								right: "1rem",
-								background: "none",
-								border: "none",
-								cursor: "pointer",
-								color: "var(--text-secondary)",
-							}}
-						>
-							<X size={24} />
-						</button>
-						<Auth />
-					</div>
-				</div>
-			)}
+					Design / Mumukshu D.C
+				</footer>
 
-			{showOrgManager && (
-				<div
-					style={{
-						position: "fixed",
-						top: 0,
-						left: 0,
-						right: 0,
-						bottom: 0,
-						background: "rgba(0,0,0,0.5)",
-						zIndex: 1000,
-						display: "flex",
-						justifyContent: "center",
-						alignItems: "center",
-						padding: "1rem",
-					}}
-				>
+				{showAuth && !user && (
 					<div
+						onClick={() => setShowAuth(false)}
 						style={{
-							position: "relative",
-							width: "100%",
-							maxWidth: "500px",
-							background: "var(--surface)",
-							borderRadius: "1rem",
-							border: "1px solid var(--border)",
+							position: "fixed",
+							top: 0,
+							left: 0,
+							right: 0,
+							bottom: 0,
+							background: "rgba(0,0,0,0.8)",
+							backdropFilter: "blur(4px)",
+							zIndex: 1000,
+							display: "flex",
+							justifyContent: "center",
+							alignItems: "center",
+							padding: "1rem",
 						}}
 					>
-						<OrganizationManager onClose={() => setShowOrgManager(false)} />
+						<div
+							onClick={(e) => e.stopPropagation()}
+							style={{
+								position: "relative",
+								width: "100%",
+								maxWidth: "400px",
+								background: "var(--canvas)",
+								padding: "2rem",
+								border: "1px solid var(--border-light)",
+								maxHeight: "90vh",
+								overflowY: "auto",
+							}}
+						>
+							<button
+								type="button"
+								onClick={() => setShowAuth(false)}
+								className="icon-btn"
+								style={{
+									position: "absolute",
+									top: "1rem",
+									right: "1rem",
+								}}
+							>
+								<X size={24} />
+							</button>
+							<Auth />
+						</div>
 					</div>
-				</div>
-			)}
-		</div>
+				)}
+
+				{showOrgManager && (
+					<div
+						onClick={() => setShowOrgManager(false)}
+						style={{
+							position: "fixed",
+							top: 0,
+							left: 0,
+							right: 0,
+							bottom: 0,
+							background: "rgba(0,0,0,0.8)",
+							backdropFilter: "blur(4px)",
+							zIndex: 1000,
+							display: "flex",
+							justifyContent: "center",
+							alignItems: "center",
+							padding: "1rem",
+						}}
+					>
+						<div
+							onClick={(e) => e.stopPropagation()}
+							style={{
+								position: "relative",
+								width: "100%",
+								maxWidth: "500px",
+								background: "var(--canvas)",
+								padding: "2rem",
+								border: "1px solid var(--border-light)",
+								maxHeight: "90vh",
+								overflowY: "auto",
+							}}
+						>
+							<OrganizationManager onClose={() => setShowOrgManager(false)} />
+						</div>
+					</div>
+				)}
+
+				{/* Global Alert Modal */}
+				{globalAlert && (
+					<div
+						onClick={() => setGlobalAlert(null)}
+						style={{
+							position: "fixed",
+							top: 0,
+							left: 0,
+							right: 0,
+							bottom: 0,
+							background: "rgba(0,0,0,0.8)",
+							backdropFilter: "blur(4px)",
+							zIndex: 9999,
+							display: "flex",
+							justifyContent: "center",
+							alignItems: "center",
+							padding: "1rem",
+						}}
+					>
+						<div
+							onClick={(e) => e.stopPropagation()}
+							style={{
+								position: "relative",
+								width: "100%",
+								maxWidth: "400px",
+								background: "var(--canvas)",
+								padding: "2rem",
+								border: "1px solid var(--border-light)",
+								display: "flex",
+								flexDirection: "column",
+								gap: "1.5rem",
+								textAlign: "center",
+							}}
+						>
+							<div style={{ display: "flex", justifyContent: "center", color: "var(--accent)" }}>
+								<AlertTriangle size={48} strokeWidth={1.5} />
+							</div>
+							<p style={{ fontSize: "1.1rem", lineHeight: 1.5, margin: 0 }}>{globalAlert}</p>
+							<button
+								type="button"
+								onClick={() => setGlobalAlert(null)}
+								className="primary-btn"
+								style={{ width: "100%" }}
+							>
+								Got It
+							</button>
+						</div>
+					</div>
+				)}
+
+				{/* Global Confirm Modal */}
+				{globalConfirm && (
+					<div
+						onClick={() => setGlobalConfirm(null)}
+						style={{
+							position: "fixed",
+							top: 0,
+							left: 0,
+							right: 0,
+							bottom: 0,
+							background: "rgba(0,0,0,0.8)",
+							backdropFilter: "blur(4px)",
+							zIndex: 9999,
+							display: "flex",
+							justifyContent: "center",
+							alignItems: "center",
+							padding: "1rem",
+						}}
+					>
+						<div
+							onClick={(e) => e.stopPropagation()}
+							style={{
+								position: "relative",
+								width: "100%",
+								maxWidth: "400px",
+								background: "var(--canvas)",
+								padding: "2rem",
+								border: "1px solid var(--border-light)",
+								display: "flex",
+								flexDirection: "column",
+								gap: "1.5rem",
+								textAlign: "center",
+							}}
+						>
+							<h3 style={{ fontSize: "1.5rem", margin: 0 }}>Are you sure?</h3>
+							<p style={{ fontSize: "1.1rem", lineHeight: 1.5, margin: 0, opacity: 0.8 }}>
+								{globalConfirm.message}
+							</p>
+							<div style={{ display: "flex", gap: "1rem" }}>
+								<button
+									type="button"
+									onClick={() => setGlobalConfirm(null)}
+									className="icon-btn"
+									style={{ flex: 1, border: "1px solid var(--border-light)", borderRadius: 0 }}
+								>
+									Cancel
+								</button>
+								<button
+									type="button"
+									onClick={globalConfirm.onConfirm}
+									className="primary-btn"
+									style={{ flex: 1 }}
+								>
+									Confirm
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
+			</div>
+		</>
 	);
 }
 
