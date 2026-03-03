@@ -95,8 +95,8 @@ export default function InstallReminder() {
 	return (
 		<div
 			style={{
-				background: "var(--primary)",
-				color: "white",
+				background: "var(--text-main)",
+				color: "var(--canvas)",
 				padding: "0.75rem 1rem",
 				display: "flex",
 				alignItems: "center",
@@ -119,9 +119,9 @@ export default function InstallReminder() {
 					type="button"
 					onClick={handleInstallClick}
 					style={{
-						background: "rgba(255, 255, 255, 0.2)",
+						background: "var(--accent)",
 						border: "none",
-						color: "white",
+						color: "#ffffff",
 						padding: "0.5rem 1rem",
 						borderRadius: "0.375rem",
 						cursor: "pointer",
@@ -137,7 +137,7 @@ export default function InstallReminder() {
 					style={{
 						background: "none",
 						border: "none",
-						color: "white",
+						color: "inherit",
 						cursor: "pointer",
 						padding: "0.25rem",
 						display: "flex",
