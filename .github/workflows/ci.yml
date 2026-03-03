@@ -24,14 +24,13 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
 
-      - name: Code Quality & Tests (Parallel)
+      - name: Code Quality & Tests (Sequential Fail-Fast)
         run: |
-          npm run lint &
-          npm run check &
-          npm run typecheck &
-          npm run test &
-          npm run build &
-          wait
+          npm run lint && \
+          npm run check && \
+          npm run typecheck && \
+          npm run test && \
+          npm run build
 
       - name: Run Playwright E2E Tests
         run: npx playwright test
