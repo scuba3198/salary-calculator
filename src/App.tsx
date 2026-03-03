@@ -13,7 +13,6 @@ function AppContent() {
 		user,
 		theme,
 		toggleTheme,
-		forceLogout,
 		currentOrg,
 		globalAlert,
 		setGlobalAlert,
@@ -24,18 +23,15 @@ function AppContent() {
 	const [showOrgManager, setShowOrgManager] = useState(false);
 
 	const handleLogout = async () => {
+		setShowAuth(false);
 		try {
-			setShowAuth(false);
-			// Clean signout
-			const { error } = await supabase.auth.signOut();
-			if (error) {
-				console.warn("Stale session detected, forcing logout");
-				forceLogout();
-			}
-		} catch (error) {
-			console.error("Logout error:", error);
-			forceLogout();
+			await supabase.auth.signOut();
+		} catch (err) {
+			console.error("Logout error:", err);
 		}
+		// Always force a clean reload — don't rely on the listener alone
+		localStorage.removeItem("last_org_id");
+		window.location.reload();
 	};
 
 	return (
