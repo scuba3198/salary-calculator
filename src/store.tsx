@@ -234,7 +234,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 					color: null,
 					created_at: null,
 					updated_at: null,
-					color_hex: null, // Added missing property
 				};
 				setOrganizations([guestOrg]);
 				setCurrentOrgId("guest");
