@@ -71,7 +71,7 @@ function AppContent() {
 						</h1>
 						<p>Track your work days and calculate your monthly earnings.</p>
 					</div>
-					<div style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
+					<div className="header-actions">
 						<button
 							type="button"
 							onClick={toggleTheme}
@@ -81,8 +81,8 @@ function AppContent() {
 							{theme === "dark" ? <Sun size={24} /> : <Moon size={24} />}
 						</button>
 
-						<div style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
-							<div style={{ textAlign: "right" }}>
+						<div className="user-controls">
+							<div className="user-info">
 								<span
 									style={{
 										display: "block",

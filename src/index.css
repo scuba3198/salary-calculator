@@ -120,6 +120,51 @@ h6 {
 	animation: reveal-up 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+.header-actions {
+	display: flex;
+	align-items: center;
+	gap: 2rem;
+	flex-shrink: 0;
+}
+
+.user-controls {
+	display: flex;
+	align-items: center;
+	gap: 2rem;
+}
+
+.user-info {
+	text-align: right;
+}
+
+@media (max-width: 600px) {
+
+	.header-actions,
+	.user-controls {
+		gap: 1rem;
+	}
+
+	.user-info span {
+		font-size: 0.8rem;
+	}
+}
+
+@media (max-width: 480px) {
+	.app-header {
+		align-items: stretch;
+	}
+
+	.header-actions {
+		width: 100%;
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+
+	.user-controls {
+		gap: 0.5rem;
+	}
+}
+
 .app-title-area h1 {
 	font-size: 3rem;
 	line-height: 1.1;
