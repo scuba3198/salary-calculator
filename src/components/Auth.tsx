@@ -121,13 +121,14 @@ export default function Auth() {
 							type="text"
 							value={fullName}
 							onChange={(e) => setFullName(e.target.value)}
+							className="minimal-input"
 							style={{
 								width: "100%",
 								padding: "0.75rem",
-								borderRadius: "0.5rem",
-								border: "1px solid var(--border)",
-								background: "var(--background)",
-								color: "var(--text)",
+								background: "transparent",
+								border: "none",
+								borderBottom: "1px solid var(--border-light)",
+								color: "var(--text-main)",
 							}}
 							placeholder="John Doe"
 							required
@@ -150,13 +151,14 @@ export default function Auth() {
 						type="email"
 						value={email}
 						onChange={(e) => setEmail(e.target.value)}
+						className="minimal-input"
 						style={{
 							width: "100%",
 							padding: "0.75rem",
-							borderRadius: "0.5rem",
-							border: "1px solid var(--border)",
-							background: "var(--background)",
-							color: "var(--text)",
+							background: "transparent",
+							border: "none",
+							borderBottom: "1px solid var(--border-light)",
+							color: "var(--text-main)",
 						}}
 						placeholder="you@example.com"
 						required
@@ -178,13 +180,14 @@ export default function Auth() {
 						type="password"
 						value={password}
 						onChange={(e) => setPassword(e.target.value)}
+						className="minimal-input"
 						style={{
 							width: "100%",
 							padding: "0.75rem",
-							borderRadius: "0.5rem",
-							border: "1px solid var(--border)",
-							background: "var(--background)",
-							color: "var(--text)",
+							background: "transparent",
+							border: "none",
+							borderBottom: "1px solid var(--border-light)",
+							color: "var(--text-main)",
 						}}
 						placeholder="••••••••"
 						required
@@ -209,13 +212,14 @@ export default function Auth() {
 							type="password"
 							value={confirmPassword}
 							onChange={(e) => setConfirmPassword(e.target.value)}
+							className="minimal-input"
 							style={{
 								width: "100%",
 								padding: "0.75rem",
-								borderRadius: "0.5rem",
-								border: "1px solid var(--border)",
-								background: "var(--background)",
-								color: "var(--text)",
+								background: "transparent",
+								border: "none",
+								borderBottom: "1px solid var(--border-light)",
+								color: "var(--text-main)",
 							}}
 							placeholder="••••••••"
 							required
@@ -255,19 +259,12 @@ export default function Auth() {
 				<button
 					type="submit"
 					disabled={loading}
+					className="primary-btn"
 					style={{
 						width: "100%",
-						padding: "0.75rem",
-						borderRadius: "0.5rem",
-						border: "none",
-						background: "var(--primary)",
-						color: "white",
+						padding: "1rem",
 						fontWeight: "600",
 						cursor: loading ? "not-allowed" : "pointer",
-						display: "flex",
-						justifyContent: "center",
-						alignItems: "center",
-						gap: "0.5rem",
 						opacity: loading ? 0.7 : 1,
 					}}
 				>

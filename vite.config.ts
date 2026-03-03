@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
@@ -23,7 +24,16 @@ export default defineConfig({
 					},
 				],
 			},
+			devOptions: {
+				enabled: true,
+			},
 		}),
 	],
 	base: "/salary-calculator/",
+	test: {
+		globals: true,
+		environment: "jsdom",
+		setupFiles: "./src/setupTests.ts",
+		exclude: ["**/e2e/**", "**/node_modules/**", "**/dist/**"],
+	},
 });

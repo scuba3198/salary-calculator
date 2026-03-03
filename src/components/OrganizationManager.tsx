@@ -17,15 +17,24 @@ const OrganizationManager = ({ onClose }: OrganizationManagerProps) => {
 		addOrganization,
 		updateOrganization,
 		deleteOrganization,
+		user,
 	} = useAppStore();
 
 	const [isAdding, setIsAdding] = useState<boolean>(false);
 	const [newOrgName, setNewOrgName] = useState<string>("");
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [editName, setEditName] = useState<string>("");
+	const [addError, setAddError] = useState<string | null>(null);
 
 	const handleAdd = async () => {
+		setAddError(null);
 		if (!newOrgName.trim()) return;
+		if (!user) {
+			setAddError(
+				"Guests can only use the 'Draft Workspace'. Please login to create multiple organizations.",
+			);
+			return;
+		}
 		await addOrganization(newOrgName);
 		setNewOrgName("");
 		setIsAdding(false);
@@ -97,12 +106,7 @@ const OrganizationManager = ({ onClose }: OrganizationManagerProps) => {
 									onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditName(e.target.value)}
 									style={{ flex: 1, padding: "0.25rem", borderRadius: "4px" }}
 								/>
-								<button
-									type="button"
-									onClick={saveEdit}
-									className="icon-btn"
-									style={{ color: "var(--success)" }}
-								>
+								<button type="button" onClick={saveEdit} className="icon-btn">
 									<Check size={16} />
 								</button>
 								<button type="button" onClick={() => setEditingId(null)} className="icon-btn">
@@ -134,10 +138,12 @@ const OrganizationManager = ({ onClose }: OrganizationManagerProps) => {
 										<span
 											style={{
 												fontSize: "0.75rem",
-												background: "var(--primary)",
-												color: "white",
+												background: "var(--accent)",
+												color: "#FFFFFF",
 												padding: "0.1rem 0.5rem",
-												borderRadius: "1rem",
+												borderRadius: "0",
+												textTransform: "uppercase",
+												letterSpacing: "0.05em",
 											}}
 										>
 											Active
@@ -201,44 +207,63 @@ const OrganizationManager = ({ onClose }: OrganizationManagerProps) => {
 			</div>
 
 			{isAdding ? (
-				<div style={{ marginTop: "1rem", display: "flex", gap: "0.5rem" }}>
-					<input
-						id="newOrgName"
-						value={newOrgName}
-						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewOrgName(e.target.value)}
-						placeholder="New Workspace Name (e.g. Freelance)"
-						style={{
-							flex: 1,
-							padding: "0.5rem",
-							borderRadius: "0.5rem",
-							border: "1px solid var(--border)",
-						}}
-					/>
-					<button
-						type="button"
-						onClick={handleAdd}
-						style={{
-							padding: "0.5rem 1rem",
-							background: "var(--success)",
-							color: "white",
-							border: "none",
-							borderRadius: "0.5rem",
-							cursor: "pointer",
-						}}
-					>
-						Add
-					</button>
-					<button
-						type="button"
-						onClick={() => setIsAdding(false)}
-						className="icon-btn"
-						style={{
-							border: "1px solid var(--border)",
-							borderRadius: "0.5rem",
-						}}
-					>
-						<X size={20} />
-					</button>
+				<div style={{ marginTop: "1rem" }}>
+					<div style={{ display: "flex", gap: "0.5rem" }}>
+						<input
+							id="newOrgName"
+							value={newOrgName}
+							onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+								setNewOrgName(e.target.value);
+								setAddError(null);
+							}}
+							placeholder="New Workspace Name (e.g. Freelance)"
+							className="minimal-input"
+							style={{
+								flex: 1,
+								padding: "0.5rem",
+								background: "transparent",
+								border: "none",
+								borderBottom: "1px solid var(--border-light)",
+								color: "var(--text-main)",
+							}}
+						/>
+						<button
+							type="button"
+							onClick={handleAdd}
+							className="primary-btn"
+							style={{
+								padding: "0.5rem 1rem",
+							}}
+						>
+							Add
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setIsAdding(false);
+								setAddError(null);
+							}}
+							className="icon-btn"
+							style={{
+								border: "1px solid var(--border)",
+								borderRadius: "0.5rem",
+							}}
+						>
+							<X size={20} />
+						</button>
+					</div>
+					{addError && (
+						<div
+							style={{
+								marginTop: "0.5rem",
+								color: "#E03C31",
+								fontSize: "0.75rem",
+								fontStyle: "italic",
+							}}
+						>
+							{addError}
+						</div>
+					)}
 				</div>
 			) : (
 				<button

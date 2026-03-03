@@ -48,7 +48,7 @@ export interface AppContextValue {
 	setHourlyRate: (val: number | "") => void;
 	dailyHours: number;
 	setDailyHours: (val: number) => void;
-	tdsPercentage: number;
+	tdsPercentage: number | null;
 	setTdsPercentage: (val: number | "") => void;
 
 	markedDates: MarkedDatesMap;
@@ -56,6 +56,11 @@ export interface AppContextValue {
 	isMarked: (year: number, month: number, day: number) => boolean;
 	resetData: () => Promise<void>;
 	forceLogout: () => Promise<void>;
+
+	globalAlert: string | null;
+	setGlobalAlert: (msg: string | null) => void;
+	globalConfirm: { message: string; onConfirm: () => void } | null;
+	setGlobalConfirm: (config: { message: string; onConfirm: () => void } | null) => void;
 
 	user: User | null;
 	loadingAuth: boolean;

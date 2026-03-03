@@ -9,6 +9,7 @@ import type {
 	Organization,
 	Theme,
 } from "./types/app.types";
+import { calculateMonthlyStats } from "./utils/calculations";
 import { getCurrentDate } from "./utils/nepali-calendar";
 import { supabase } from "./utils/supabase";
 
@@ -42,6 +43,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	const [currentOrgId, setCurrentOrgId] = useState<string | null>(
 		() => localStorage.getItem("last_org_id") || null,
 	);
+
+	// --- Global Modals ---
+	const [globalAlert, setGlobalAlert] = useState<string | null>(null);
+	const [globalConfirm, setGlobalConfirm] = useState<{
+		message: string;
+		onConfirm: () => void;
+	} | null>(null);
 
 	// Derived Current Org
 	const currentOrg: Organization | null =
@@ -117,7 +125,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 						name: "Primary Job",
 						hourly_rate: 0,
 						daily_hours: 8,
-						tds_percentage: 1,
+						tds_percentage: null as number | null,
 					};
 					const { data: newOrg } = await supabase
 						.from("organizations")
@@ -126,7 +134,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 							name: defaults.name,
 							hourly_rate: defaults.hourly_rate,
 							daily_hours: defaults.daily_hours,
-							tds_percentage: (defaults as { tds_percentage?: number }).tds_percentage || 1,
+							tds_percentage:
+								(defaults as { tds_percentage?: number | null }).tds_percentage ?? null,
 						})
 						.select()
 						.single();
@@ -218,7 +227,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 					name: "Draft Workspace",
 					hourly_rate: 0,
 					daily_hours: 8,
-					tds_percentage: 1,
+					tds_percentage: null,
 					user_id: "",
 					color: null,
 					created_at: null,
@@ -237,9 +246,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			const dataToMerge =
 				isGuestModeRef.current && Object.keys(guestDataRef.current.markedDates).length > 0
 					? {
-							dates: { ...guestDataRef.current.markedDates },
-							settings: guestDataRef.current.orgSettings,
-						}
+						dates: { ...guestDataRef.current.markedDates },
+						settings: guestDataRef.current.orgSettings,
+					}
 					: null;
 
 			isGuestModeRef.current = false; // No longer in guest mode
@@ -316,7 +325,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	const addOrganization = async (name: string) => {
 		if (!user) {
 			// Guest mode: Only one org allowed
-			alert(
+			setGlobalAlert(
 				"Guests can only use the 'Draft Workspace'. Please login to create multiple organizations.",
 			);
 			return;
@@ -329,7 +338,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				name,
 				hourly_rate: 0,
 				daily_hours: 8,
-				tds_percentage: 1,
+				tds_percentage: null,
 			})
 			.select()
 			.single();
@@ -358,7 +367,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 		if (!user) return; // Guests can't delete the default org really
 
 		if (organizations.length <= 1) {
-			alert("Cannot delete the only organization.");
+			setGlobalAlert("Cannot delete the only organization.");
 			return;
 		}
 
@@ -370,7 +379,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 		if (attendanceError) {
 			console.error("Failed to delete attendance records:", attendanceError);
-			alert(`Failed to delete organization's attendance records: ${attendanceError.message}`);
+			setGlobalAlert(
+				`Failed to delete organization's attendance records: ${attendanceError.message}`,
+			);
 			return;
 		}
 
@@ -382,9 +393,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 		if (error) {
 			console.error("Delete failed:", error);
-			alert(`Failed to delete organization: ${error.message}`);
+			setGlobalAlert(`Failed to delete organization: ${error.message}`);
 		} else if (count === 0) {
-			alert("Failed to delete: Organization not found or permission denied (0 rows affected).");
+			setGlobalAlert(
+				"Failed to delete: Organization not found or permission denied (0 rows affected).",
+			);
 		} else {
 			const newOrgs = organizations.filter((o) => o.id !== id);
 			setOrganizations(newOrgs);
@@ -459,22 +472,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	const setTdsPercentage = (val: number | "") => {
 		if (currentOrgId)
 			updateOrganization(currentOrgId, {
-				tds_percentage: val === "" ? 0 : val,
+				tds_percentage: val === "" ? null : val,
 			});
 	};
 
 	const resetData = async () => {
-		if (window.confirm("Reset current workspace data?")) {
-			if (user && currentOrgId) {
-				await supabase.from("attendance").delete().eq("organization_id", currentOrgId);
-				await updateOrganization(currentOrgId, {
-					hourly_rate: 0,
-					daily_hours: 8,
-					tds_percentage: 1,
-				});
-			}
-			setMarkedDates({});
-		}
+		setGlobalConfirm({
+			message: "Reset current workspace data?",
+			onConfirm: async () => {
+				if (user && currentOrgId) {
+					await supabase.from("attendance").delete().eq("organization_id", currentOrgId);
+					await updateOrganization(currentOrgId, {
+						hourly_rate: 0,
+						daily_hours: 8,
+						tds_percentage: null,
+					});
+				}
+				setMarkedDates({});
+				setGlobalConfirm(null);
+			},
+		});
 	};
 
 	const forceLogout = async () => {
@@ -489,31 +506,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 	// Calculation
 	const getMonthlyStats = (): MonthlyStats => {
-		let count = 0;
-		let totalHours = 0;
-		Object.entries(markedDates).forEach(([dateStr, dayHours]) => {
-			const [y, m] = dateStr.split("-").map(Number);
-			if (y === viewYear && m === viewMonth + 1) {
-				count++;
-				totalHours += Number(dayHours) || 0;
-			}
-		});
-
-		const rate = Number(currentOrg?.hourly_rate || 0);
-		const tds = Number(currentOrg?.tds_percentage || 0);
-
-		const grossSalary = totalHours * rate;
-		const tdsAmount = (grossSalary * tds) / 100;
-		const netSalary = grossSalary - tdsAmount;
-
-		return {
-			daysWorked: count,
-			totalHours,
-			totalSalary: grossSalary,
-			grossSalary,
-			tdsAmount,
-			netSalary,
-		};
+		return calculateMonthlyStats(
+			markedDates,
+			viewYear,
+			viewMonth,
+			Number(currentOrg?.hourly_rate || 0),
+			Number(currentOrg?.tds_percentage || 0)
+		);
 	};
 
 	return (
@@ -529,7 +528,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				setHourlyRate,
 				dailyHours: currentOrg?.daily_hours ?? 8,
 				setDailyHours,
-				tdsPercentage: currentOrg?.tds_percentage ?? 1,
+				tdsPercentage: currentOrg?.tds_percentage ?? null,
 				setTdsPercentage,
 
 				markedDates,
@@ -537,6 +536,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				isMarked,
 				resetData,
 				forceLogout,
+
+				globalAlert,
+				setGlobalAlert,
+				globalConfirm,
+				setGlobalConfirm,
+
 				user,
 				loadingAuth,
 				isSyncing,

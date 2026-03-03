@@ -16,86 +16,114 @@ const SalaryStats = () => {
 
 	return (
 		<div className="stats-container">
-			<div className="glass-card stat-box">
-				<div className="flex-center mb-4">
-					<Banknote size={32} color="var(--success)" />
+			<div className="stat-box">
+				<div className="mb-4" style={{ opacity: 0.8 }}>
+					<Banknote size={24} strokeWidth={1.5} />
 				</div>
-				<h2>Monthly Total</h2>
+				<h2 style={{ fontSize: "2rem", marginBottom: "2rem" }}>Earnings.</h2>
 
-				<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-					<div className="text-xl" style={{ color: "var(--text-secondary)" }}>
-						Total Days: <span style={{ color: "var(--text-primary)" }}>{stats.daysWorked}</span>
-					</div>
-					<div className="text-xl" style={{ color: "var(--text-secondary)" }}>
-						Total Hours: <span style={{ color: "var(--text-primary)" }}>{stats.totalHours}</span>
-					</div>
+				<div style={{ display: "flex", flexDirection: "column", gap: "2rem", width: "100%" }}>
 					<div
 						style={{
-							marginTop: "0.5rem",
-							paddingTop: "0.5rem",
-							borderTop: "1px solid var(--glass-border)",
+							display: "flex",
+							justifyContent: "space-between",
+							alignItems: "flex-end",
+							borderBottom: "1px solid var(--border-light)",
+							paddingBottom: "0.5rem",
 						}}
 					>
-						<div
-							style={{
-								display: "flex",
-								justifyContent: "space-between",
-								color: "var(--text-secondary)",
-							}}
-						>
-							<span>Gross:</span> <span>Rs. {stats.grossSalary.toLocaleString()}</span>
-						</div>
-						<div
-							style={{
-								display: "flex",
-								justifyContent: "space-between",
-								color: "var(--danger)",
-							}}
-						>
-							<span>TDS ({tdsPercentage}%):</span>{" "}
-							<span>- Rs. {stats.tdsAmount.toLocaleString()}</span>
-						</div>
-					</div>
-
-					<div
-						style={{
-							marginTop: "0.5rem",
-							borderTop: "1px solid var(--glass-border)",
-							paddingTop: "0.5rem",
-						}}
-					>
-						<span
-							style={{
-								fontSize: "3rem",
-								fontWeight: "bold",
-								background: "var(--success)",
-								WebkitBackgroundClip: "text",
-								WebkitTextFillColor: "transparent",
-								backgroundImage: "linear-gradient(135deg, #00b894 0%, #00cec9 100%)",
-							}}
-						>
-							Rs. {stats.netSalary.toLocaleString()}
+						<span className="label" style={{ margin: 0 }}>
+							Total Days
 						</span>
-						<div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Net Salary</div>
+						<span className="value" style={{ fontSize: "2rem" }}>
+							{stats.daysWorked}
+						</span>
+					</div>
+					<div
+						style={{
+							display: "flex",
+							justifyContent: "space-between",
+							alignItems: "flex-end",
+							borderBottom: "1px solid var(--border-light)",
+							paddingBottom: "0.5rem",
+						}}
+					>
+						<span className="label" style={{ margin: 0 }}>
+							Total Hours
+						</span>
+						<span className="value" style={{ fontSize: "2rem" }}>
+							{stats.totalHours}
+						</span>
+					</div>
+
+					<div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "1rem" }}>
+						<div style={{ display: "flex", justifyContent: "space-between", opacity: 0.6 }}>
+							<span
+								style={{
+									fontFamily: "var(--font-body)",
+									textTransform: "uppercase",
+									fontSize: "0.8rem",
+									letterSpacing: "0.05em",
+								}}
+							>
+								Gross
+							</span>
+							<span style={{ fontFamily: "var(--font-body)" }}>
+								Rs. {stats.grossSalary.toLocaleString()}
+							</span>
+						</div>
+						<div
+							style={{ display: "flex", justifyContent: "space-between", color: "var(--accent)" }}
+						>
+							<span
+								style={{
+									fontFamily: "var(--font-body)",
+									textTransform: "uppercase",
+									fontSize: "0.8rem",
+									letterSpacing: "0.05em",
+								}}
+							>
+								TDS ({tdsPercentage}%)
+							</span>
+							<span style={{ fontFamily: "var(--font-body)" }}>
+								- Rs. {stats.tdsAmount.toLocaleString()}
+							</span>
+						</div>
+					</div>
+
+					<div
+						style={{
+							marginTop: "2rem",
+							paddingTop: "2rem",
+							borderTop: "2px solid var(--text-main)",
+						}}
+					>
+						<span className="label">Net Salary</span>
+						<div className="value" style={{ color: "var(--accent)", marginTop: "0.5rem" }}>
+							Rs. {stats.netSalary.toLocaleString()}
+						</div>
 					</div>
 				</div>
 			</div>
 
-			<div className="glass-card stat-box">
-				<div className="flex-center mb-4">
-					<Clock size={32} color="var(--accent-color)" />
+			<div className="stat-box">
+				<div className="mb-4" style={{ opacity: 0.8 }}>
+					<Clock size={24} strokeWidth={1.5} />
 				</div>
-				<h2>Settings</h2>
+				<h2 style={{ fontSize: "2rem", marginBottom: "2rem" }}>Settings.</h2>
 				<div
 					style={{
 						textAlign: "left",
 						display: "flex",
 						flexDirection: "column",
-						gap: "1rem",
+						gap: "2.5rem",
+						width: "100%",
 					}}
 				>
-					<div>
-						<label htmlFor="hourlyRate">Hourly Rate (Rs)</label>
+					<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+						<label htmlFor="hourlyRate" className="label" style={{ opacity: 1 }}>
+							Hourly Rate (Rs)
+						</label>
 						<input
 							id="hourlyRate"
 							type="number"
@@ -110,8 +138,10 @@ const SalaryStats = () => {
 							}
 						/>
 					</div>
-					<div>
-						<label htmlFor="dailyHours">Daily Hours</label>
+					<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+						<label htmlFor="dailyHours" className="label" style={{ opacity: 1 }}>
+							Daily Hours
+						</label>
 						<input
 							id="dailyHours"
 							type="number"
@@ -129,8 +159,10 @@ const SalaryStats = () => {
 							}
 						/>
 					</div>
-					<div>
-						<label htmlFor="tdsPercentage">TDS (%)</label>
+					<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+						<label htmlFor="tdsPercentage" className="label" style={{ opacity: 1 }}>
+							TDS (%)
+						</label>
 						<input
 							id="tdsPercentage"
 							type="number"

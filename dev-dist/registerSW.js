@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/salary-calculator/dev-sw.js?dev-sw', { scope: '/salary-calculator/', type: 'classic' })

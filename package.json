@@ -1,37 +1,48 @@
 {
-	"name": "salary-calculator",
-	"private": true,
-	"version": "0.0.0",
-	"homepage": "https://scuba3198.github.io/salary-calculator",
-	"type": "module",
-	"scripts": {
-		"dev": "vite",
-		"build": "vite build",
-		"typecheck": "tsc --noEmit",
-		"lint": "biome lint src scripts *.ts",
-		"format": "biome format --write src scripts *.ts",
-		"check": "biome check --write src scripts *.ts",
-		"preview": "vite preview"
-	},
-	"dependencies": {
-		"@supabase/supabase-js": "^2.89.0",
-		"lucide-react": "^0.562.0",
-		"nepali-date-converter": "^3.4.0",
-		"react": "^19.2.0",
-		"react-dom": "^19.2.0"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "^2.4.2",
-		"@tsconfig/strictest": "^2.0.8",
-		"@types/react": "^19.2.5",
-		"@types/react-dom": "^19.2.3",
-		"@vitejs/plugin-react": "^5.1.1",
-		"dotenv": "^17.2.3",
-		"typescript": "^5.9.3",
-		"vite": "^7.2.4",
-		"vite-plugin-pwa": "^1.2.0"
-	},
-	"overrides": {
-		"serialize-javascript": "7.0.3"
-	}
+  "name": "salary-calculator",
+  "private": true,
+  "version": "0.0.0",
+  "homepage": "https://scuba3198.github.io/salary-calculator",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint src scripts *.ts",
+    "format": "biome format --write src scripts *.ts",
+    "check": "biome check --write src scripts *.ts",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.89.0",
+    "lucide-react": "^0.562.0",
+    "nepali-date-converter": "^3.4.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.2",
+    "@playwright/test": "^1.58.2",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@tsconfig/strictest": "^2.0.8",
+    "@types/jest-axe": "^3.5.9",
+    "@types/node": "^25.3.3",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "dotenv": "^17.2.3",
+    "jest-axe": "^10.0.0",
+    "jsdom": "^28.1.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.4",
+    "vite-plugin-pwa": "^1.2.0",
+    "vitest": "^4.0.18"
+  },
+  "overrides": {
+    "serialize-javascript": "7.0.3"
+  }
 }
