@@ -8,9 +8,9 @@
     "dev": "vite",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
-    "lint": "biome lint src scripts *.ts",
-    "format": "biome format --write src scripts *.ts",
-    "check": "biome check --write src scripts *.ts",
+    "lint": "biome lint src/",
+    "format": "biome format --write src/",
+    "check": "biome check --write src/",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"

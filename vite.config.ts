@@ -30,10 +30,22 @@ export default defineConfig({
 		}),
 	],
 	base: "/salary-calculator/",
+	server: {
+		port: 5173,
+		strictPort: true,
+	},
+	preview: {
+		port: 4173,
+		strictPort: true,
+	},
 	test: {
 		globals: true,
 		environment: "jsdom",
 		setupFiles: "./src/setupTests.ts",
 		exclude: ["**/e2e/**", "**/node_modules/**", "**/dist/**"],
+		env: {
+			VITE_SUPABASE_URL: "https://dummy.supabase.co",
+			VITE_SUPABASE_ANON_KEY: "dummy-key",
+		},
 	},
 });
