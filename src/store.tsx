@@ -93,7 +93,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 	}, [theme, user]);
 
 	// 2. Auth Listener & Data Loader
-	// biome-ignore lint/correctness/useExhaustiveDependencies: Only run once on mount
+	const userIdRef = useRef<string | null>(null);
+
 	useEffect(() => {
 		const loadUserData = async (
 			userId: string,
@@ -215,9 +216,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			}
 		};
 
-		const handleAuthChange = async (session: { user: User | null } | null) => {
-			if (!session?.user) {
+		const handleAuthChange = async (incomingUser: User | null) => {
+			if (!incomingUser) {
 				// GUEST MODE INITIALIZATION
+				userIdRef.current = null;
 				setUser(null);
 				isGuestModeRef.current = true;
 
@@ -253,24 +255,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 			isGuestModeRef.current = false; // No longer in guest mode
 
-			const isNewUser = user?.id !== session.user.id;
-			setUser(session.user);
+			const isActualNewUser = userIdRef.current !== incomingUser.id;
+			userIdRef.current = incomingUser.id;
+			setUser(incomingUser);
 
-			if (isNewUser || !hasLoadedFromRemote.current) {
-				await loadUserData(session.user.id, dataToMerge);
+			if (isActualNewUser || !hasLoadedFromRemote.current) {
+				await loadUserData(incomingUser.id, dataToMerge);
 			}
 		};
-
-		supabase.auth.getSession().then(({ data: { session } }) => {
-			handleAuthChange(session);
-		});
 
 		const {
 			data: { subscription },
 		} = supabase.auth.onAuthStateChange(async (event, session) => {
-			if (event === "SIGNED_OUT") handleAuthChange(null);
-			else if (["SIGNED_IN", "TOKEN_REFRESHED", "USER_UPDATED"].includes(event))
-				handleAuthChange(session);
+			if (event === "SIGNED_OUT") {
+				handleAuthChange(null);
+			} else if (
+				["INITIAL_SESSION", "SIGNED_IN", "TOKEN_REFRESHED", "USER_UPDATED"].includes(event)
+			) {
+				handleAuthChange(session?.user ?? null);
+			}
 		});
 
 		return () => subscription.unsubscribe();
