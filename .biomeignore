@@ -1,8 +1,9 @@
-node_modules
-dist
-.git
-.agent
-.agents
+node_modules/
+dist/
+dev-dist/
+.git/
+.agent/
+.agents/
 .env
 .mcp.json
 README.md
