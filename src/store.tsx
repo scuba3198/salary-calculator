@@ -264,14 +264,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			}
 		};
 
+		// 1. Explicit Session Restoration
+		supabase.auth.getSession().then(({ data: { session } }) => {
+			if (session) {
+				handleAuthChange(session.user);
+			} else {
+				// Only switch to guest mode if getSession confirmed no current session
+				handleAuthChange(null);
+			}
+		});
+
+		// 2. Continuous Listener
 		const {
 			data: { subscription },
 		} = supabase.auth.onAuthStateChange(async (event, session) => {
 			if (event === "SIGNED_OUT") {
 				handleAuthChange(null);
-			} else if (
-				["INITIAL_SESSION", "SIGNED_IN", "TOKEN_REFRESHED", "USER_UPDATED"].includes(event)
-			) {
+			} else if (["SIGNED_IN", "TOKEN_REFRESHED", "USER_UPDATED"].includes(event)) {
 				handleAuthChange(session?.user ?? null);
 			}
 		});
