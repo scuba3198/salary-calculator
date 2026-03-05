@@ -81,17 +81,19 @@ const SalaryStats = () => {
 						type="number"
 						value={dailyHours || ""}
 						onChange={(e) => {
-							const val = e.target.value === "" ? 0 : Number(e.target.value);
-							const decode = Schema.decodeUnknownOption(DailyHoursSchema);
-							const validValue = decode(val);
-							if (validValue._tag === "Some") {
-								dispatch({ _tag: "SetDailyHours", value: validValue.value });
+							if (e.target.value === "") {
+								dispatch({ _tag: "SetDailyHours", value: "" });
 							} else {
-								e.target.value = dailyHours ? dailyHours.toString() : "";
+								const decoded = Schema.decodeUnknownOption(DailyHoursSchema)(Number(e.target.value));
+								if (decoded._tag === "Some") {
+									dispatch({ _tag: "SetDailyHours", value: decoded.value });
+								} else {
+									e.target.value = dailyHours ? dailyHours.toString() : "";
+								}
 							}
 						}}
 						disabled={isSyncing}
-						placeholder="8"
+						placeholder=""
 						step="0.5"
 						min="0"
 						max="24"

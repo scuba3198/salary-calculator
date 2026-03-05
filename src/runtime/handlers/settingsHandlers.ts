@@ -30,7 +30,7 @@ export const handleSetHourlyRate = (
 	});
 
 export const handleSetDailyHours = (
-	value: number,
+	value: number | "",
 	stateRef: SubscriptionRef.SubscriptionRef<AppState>,
 	supabase: SupabaseService,
 ) =>
@@ -41,7 +41,7 @@ export const handleSetDailyHours = (
 		yield* SubscriptionRef.update(stateRef, (s) => ({
 			...s,
 			organizations: s.organizations.map((o) =>
-				o.id === s.currentOrgId ? { ...o, daily_hours: value } : o,
+				o.id === s.currentOrgId ? { ...o, daily_hours: value === "" ? 0 : value } : o,
 			),
 		}));
 
@@ -50,7 +50,7 @@ export const handleSetDailyHours = (
 				"updateDailyHours",
 				supabase.client
 					.from("organizations")
-					.update({ daily_hours: value })
+					.update({ daily_hours: value === "" ? 0 : value })
 					.eq("id", state.currentOrgId),
 			);
 		}

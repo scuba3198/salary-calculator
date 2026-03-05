@@ -14,7 +14,7 @@ export type AppIntent =
 
 	// Settings
 	| { readonly _tag: "SetHourlyRate"; readonly value: number | "" }
-	| { readonly _tag: "SetDailyHours"; readonly value: number }
+	| { readonly _tag: "SetDailyHours"; readonly value: number | "" }
 	| { readonly _tag: "SetTdsPercentage"; readonly value: number | "" }
 	| { readonly _tag: "ToggleTheme" }
 
