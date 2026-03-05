@@ -22,13 +22,20 @@ export const handleAuthChanged = (
 		if (!user) {
 			// Guest Mode
 			yield* SubscriptionRef.update(stateRef, (s) => {
-				const hasOrgs = s.organizations.length > 0;
+				const savedOrgsRaw = JSON.parse(localStorage.getItem("organizations") || "[]");
+				const savedOrgs = Array.isArray(savedOrgsRaw)
+					? savedOrgsRaw.map((org: Organization) => ({
+						...org,
+						hourly_rate: Math.max(org.hourly_rate || 0, org.id === "guest" ? 500 : 0),
+					}))
+					: [];
+
 				return {
 					...s,
 					user: null,
 					loadingAuth: false,
-					organizations: hasOrgs
-						? s.organizations
+					organizations: savedOrgs.length > 0
+						? savedOrgs
 						: [
 							{
 								id: "guest",
@@ -42,7 +49,8 @@ export const handleAuthChanged = (
 								updated_at: null,
 							} as Organization,
 						],
-					currentOrgId: "guest",
+					currentOrgId: localStorage.getItem("currentOrgId") || "guest",
+					markedDates: {},
 				};
 			});
 		} else {

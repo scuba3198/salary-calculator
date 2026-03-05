@@ -31,6 +31,7 @@ export const handleAddOrg = (
 			...s,
 			organizations: [...s.organizations, newOrg],
 			currentOrgId: newOrg.id,
+			markedDates: {}, // Force clear for new workspace
 		}));
 		localStorage.setItem("last_org_id", newOrg.id);
 	});
@@ -47,6 +48,7 @@ export const handleSwitchOrg = (
 		yield* SubscriptionRef.update(stateRef, (s) => ({
 			...s,
 			currentOrgId: orgId,
+			markedDates: {}, // Clear immediately while syncing
 			isSyncing: true,
 		}));
 		localStorage.setItem("last_org_id", orgId);
@@ -87,11 +89,43 @@ export const handleDeleteOrg = (
 
 		yield* supabase.query("deleteOrg", supabase.client.from("organizations").delete().eq("id", id));
 
-		yield* SubscriptionRef.update(stateRef, (s) => {
+		const stateAfterDelete = yield* SubscriptionRef.updateAndGet(stateRef, (s) => {
 			const nextOrgs = s.organizations.filter((o) => o.id !== id);
 			const nextId = s.currentOrgId === id ? (nextOrgs[0]?.id ?? null) : s.currentOrgId;
-			return { ...s, organizations: nextOrgs, currentOrgId: nextId };
+			return {
+				...s,
+				organizations: nextOrgs,
+				currentOrgId: nextId,
+				...(s.currentOrgId === id && {
+					markedDates: {}, // Clear dates if active org was deleted
+					isSyncing: !!nextId,
+				}),
+			};
 		});
+
+		// If we switched orgs due to deletion, fetch new attendance
+		if (state.currentOrgId === id && stateAfterDelete.currentOrgId) {
+			localStorage.setItem("last_org_id", stateAfterDelete.currentOrgId);
+
+			const attendance = yield* supabase.query<import("../../types/app.types").AttendancePartial[]>(
+				"fetchAttendance",
+				supabase.client
+					.from("attendance")
+					.select("date_str, daily_hours")
+					.eq("organization_id", stateAfterDelete.currentOrgId),
+			);
+
+			const remoteDates: Record<string, number> = {};
+			attendance.forEach((row) => {
+				if (row.date_str) remoteDates[row.date_str] = row.daily_hours ?? 8;
+			});
+
+			yield* SubscriptionRef.update(stateRef, (s) => ({
+				...s,
+				markedDates: remoteDates,
+				isSyncing: false,
+			}));
+		}
 	});
 
 export const handleUpdateOrg = (

@@ -102,8 +102,8 @@ export default function OrganizationManager({ onClose }: Props) {
 											<span
 												style={{
 													fontSize: "0.6rem",
-													background: "var(--primary)",
-													color: "white",
+													background: "var(--accent)",
+													color: "#ffffff",
 													padding: "0.1rem 0.3rem",
 													borderRadius: "2px",
 												}}

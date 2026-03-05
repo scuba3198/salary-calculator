@@ -65,7 +65,7 @@ const SalaryStats = () => {
 						onChange={(e) => dispatch({ _tag: "SetDailyHours", value: Number(e.target.value) })}
 						disabled={isSyncing}
 					>
-						{[4, 5, 6, 7, 8, 9, 10, 12].map((h) => (
+						{[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16, 24].map((h) => (
 							<option key={h} value={h}>
 								{h} hours
 							</option>

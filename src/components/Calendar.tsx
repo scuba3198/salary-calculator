@@ -39,23 +39,21 @@ const Calendar = () => {
 	return (
 		<div className="calendar-panel">
 			<div className="calendar-header">
+				<button type="button" onClick={handlePrev} className="icon-btn" title="Previous Month">
+					<ChevronLeft size={24} />
+				</button>
 				<div className="calendar-title">
 					<h2>{monthName}</h2>
 					<span>{viewYear} BS</span>
 				</div>
-				<div className="calendar-nav">
-					<button type="button" onClick={handlePrev} className="icon-btn" title="Previous Month">
-						<ChevronLeft size={20} />
-					</button>
-					<button type="button" onClick={handleNext} className="icon-btn" title="Next Month">
-						<ChevronRight size={20} />
-					</button>
-				</div>
+				<button type="button" onClick={handleNext} className="icon-btn" title="Next Month">
+					<ChevronRight size={24} />
+				</button>
 			</div>
 
 			<div className="calendar-grid">
-				{["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"].map((d) => (
-					<div key={d} className="weekday-label">
+				{["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"].map((d, i) => (
+					<div key={d} className={`weekday-label ${i === 6 ? "is-holiday" : ""}`}>
 						{d}
 					</div>
 				))}
@@ -69,6 +67,8 @@ const Calendar = () => {
 					const day = i + 1;
 					const marked = isMarked(viewYear, viewMonth, day);
 					const today = isToday(day);
+					const weekday = (startWeekday + i) % 7;
+					const isSat = weekday === 6;
 
 					return (
 						<button
@@ -76,11 +76,10 @@ const Calendar = () => {
 							type="button"
 							onClick={() => onToggle(day)}
 							disabled={isSyncing}
-							className={`calendar-day ${marked ? "marked" : ""} ${today ? "today" : ""}`}
+							className={`calendar-day ${marked ? "active" : ""} ${today ? "today" : ""} ${isSat ? "is-holiday" : ""}`}
 							style={{ cursor: isSyncing ? "wait" : "pointer" }}
 						>
 							<span className="day-number">{day}</span>
-							{marked && <div className="mark-indicator" />}
 						</button>
 					);
 				})}
