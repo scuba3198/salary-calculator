@@ -1,5 +1,10 @@
+import { Schema } from "effect";
 import { dispatch, useAppState } from "../hooks/useAppRuntime";
 import { calculateMonthlyStats } from "../utils/calculations";
+
+const DailyHoursSchema = Schema.Number.pipe(Schema.between(0, 24));
+const HourlyRateSchema = Schema.Number.pipe(Schema.greaterThanOrEqualTo(0));
+const TdsSchema = Schema.Number.pipe(Schema.between(0, 100));
 
 const SalaryStats = () => {
 	const state = useAppState();
@@ -46,31 +51,42 @@ const SalaryStats = () => {
 						id="hourlyRate"
 						type="number"
 						value={hourlyRate || ""}
-						onChange={(e) =>
-							dispatch({
-								_tag: "SetHourlyRate",
-								value: e.target.value === "" ? "" : Number(e.target.value),
-							})
-						}
+						onChange={(e) => {
+							if (e.target.value === "") {
+								dispatch({ _tag: "SetHourlyRate", value: "" });
+							} else {
+								const decoded = Schema.decodeUnknownOption(HourlyRateSchema)(Number(e.target.value));
+								if (decoded._tag === "Some") {
+									dispatch({ _tag: "SetHourlyRate", value: decoded.value });
+								}
+							}
+						}}
 						disabled={isSyncing}
 						placeholder="0"
+						min="0"
 					/>
 				</div>
 
 				<div className="input-group">
-					<label htmlFor="dailyHours">Default Daily Hours</label>
-					<select
+					<label htmlFor="dailyHours">Daily Hours</label>
+					<input
 						id="dailyHours"
-						value={dailyHours}
-						onChange={(e) => dispatch({ _tag: "SetDailyHours", value: Number(e.target.value) })}
+						type="number"
+						value={dailyHours || ""}
+						onChange={(e) => {
+							const val = e.target.value === "" ? 0 : Number(e.target.value);
+							const decode = Schema.decodeUnknownOption(DailyHoursSchema);
+							const validValue = decode(val);
+							if (validValue._tag === "Some") {
+								dispatch({ _tag: "SetDailyHours", value: validValue.value });
+							}
+						}}
 						disabled={isSyncing}
-					>
-						{[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16, 24].map((h) => (
-							<option key={h} value={h}>
-								{h} hours
-							</option>
-						))}
-					</select>
+						placeholder="8"
+						step="0.5"
+						min="0"
+						max="24"
+					/>
 				</div>
 
 				<div className="input-group">
@@ -80,14 +96,20 @@ const SalaryStats = () => {
 						type="number"
 						step="0.1"
 						value={tdsPercentage ?? ""}
-						onChange={(e) =>
-							dispatch({
-								_tag: "SetTdsPercentage",
-								value: e.target.value === "" ? "" : Number(e.target.value),
-							})
-						}
+						onChange={(e) => {
+							if (e.target.value === "") {
+								dispatch({ _tag: "SetTdsPercentage", value: "" });
+							} else {
+								const decoded = Schema.decodeUnknownOption(TdsSchema)(Number(e.target.value));
+								if (decoded._tag === "Some") {
+									dispatch({ _tag: "SetTdsPercentage", value: decoded.value });
+								}
+							}
+						}}
 						disabled={isSyncing}
 						placeholder="None"
+						min="0"
+						max="100"
 					/>
 				</div>
 			</div>
