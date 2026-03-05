@@ -4,6 +4,7 @@ import type { Tables } from "./database.types";
 // Database row types (aliases for convenience)
 export type Organization = Tables<"organizations">;
 export type AttendanceRow = Tables<"attendance">;
+export type AttendancePartial = Pick<AttendanceRow, "date_str" | "daily_hours">;
 export type UserSettings = Tables<"user_settings">;
 
 // Nepali date
@@ -40,9 +41,9 @@ export type Theme = "dark" | "light";
 // App Context shape (for store.tsx)
 export interface AppContextValue {
 	viewYear: number;
-	setViewYear: React.Dispatch<React.SetStateAction<number>>;
+	setViewYear: (year: number) => void;
 	viewMonth: number;
-	setViewMonth: React.Dispatch<React.SetStateAction<number>>;
+	setViewMonth: (month: number) => void;
 
 	hourlyRate: number;
 	setHourlyRate: (val: number | "") => void;
@@ -52,10 +53,10 @@ export interface AppContextValue {
 	setTdsPercentage: (val: number | "") => void;
 
 	markedDates: MarkedDatesMap;
-	toggleDate: (year: number, month: number, day: number) => Promise<void>;
+	toggleDate: (year: number, month: number, day: number) => void;
 	isMarked: (year: number, month: number, day: number) => boolean;
-	resetData: () => Promise<void>;
-	forceLogout: () => Promise<void>;
+	resetData: () => void;
+	forceLogout: () => void;
 
 	globalAlert: string | null;
 	setGlobalAlert: (msg: string | null) => void;
@@ -72,8 +73,8 @@ export interface AppContextValue {
 
 	organizations: Organization[];
 	currentOrg: Organization | null;
-	switchOrganization: (orgId: string) => Promise<void>;
-	addOrganization: (name: string) => Promise<void>;
-	updateOrganization: (id: string, updates: Partial<Organization>) => Promise<void>;
-	deleteOrganization: (id: string) => Promise<void>;
+	switchOrganization: (orgId: string) => void;
+	addOrganization: (name: string) => void;
+	updateOrganization: (id: string, updates: Partial<Organization>) => void;
+	deleteOrganization: (id: string) => void;
 }

@@ -1,124 +1,90 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type React from "react";
-import { useAppStore } from "../store";
+import { useAppState, dispatch } from "../hooks/useAppRuntime";
 import { getMonthDays, getNepaliMonthName } from "../utils/nepali-calendar";
 
 const Calendar = () => {
-	const {
-		viewYear,
-		setViewYear,
-		viewMonth,
-		setViewMonth,
-		toggleDate,
-		isMarked,
-		currentDate,
-		isSyncing,
-	} = useAppStore();
+	const state = useAppState();
+	const { viewYear, viewMonth, markedDates, currentDate, isSyncing } = state;
 
 	const { startWeekday, daysInMonth } = getMonthDays(viewYear, viewMonth);
+	const monthName = getNepaliMonthName(viewMonth);
 
-	// Weekday headers
-	const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+	const isMarked = (y: number, m: number, d: number) => !!markedDates[`${y}-${m + 1}-${d}`];
 
 	const handlePrev = () => {
 		if (viewMonth === 0) {
-			setViewMonth(11);
-			setViewYear(viewYear - 1);
+			dispatch({ _tag: "SetViewMonth", month: 11 });
+			dispatch({ _tag: "SetViewYear", year: viewYear - 1 });
 		} else {
-			setViewMonth(viewMonth - 1);
+			dispatch({ _tag: "SetViewMonth", month: viewMonth - 1 });
 		}
 	};
 
 	const handleNext = () => {
 		if (viewMonth === 11) {
-			setViewMonth(0);
-			setViewYear(viewYear + 1);
+			dispatch({ _tag: "SetViewMonth", month: 0 });
+			dispatch({ _tag: "SetViewYear", year: viewYear + 1 });
 		} else {
-			setViewMonth(viewMonth + 1);
+			dispatch({ _tag: "SetViewMonth", month: viewMonth + 1 });
 		}
 	};
 
-	// Generate grid items
-	const days: React.ReactNode[] = [];
-	// Empty slots for start offset
-	for (let i = 0; i < startWeekday; i++) {
-		days.push(<div key={`empty-${i}`} className="calendar-day disabled" />);
-	}
-	// Details
-	for (let d = 1; d <= daysInMonth; d++) {
-		const isActive = isMarked(viewYear, viewMonth, d);
-		const isToday =
-			viewYear === currentDate.year && viewMonth === currentDate.month && d === currentDate.day;
-		const isSaturday = (startWeekday + d - 1) % 7 === 6;
+	const onToggle = (day: number) => {
+		dispatch({ _tag: "ToggleDate", year: viewYear, month: viewMonth, day });
+	};
 
-		days.push(
-			<button
-				type="button"
-				key={d}
-				className={`calendar-day ${isActive ? "active" : ""} ${isToday ? "today" : ""} ${isSaturday ? "is-holiday" : ""}`}
-				onClick={() => toggleDate(viewYear, viewMonth, d)}
-			>
-				{d}
-			</button>,
-		);
-	}
+	const isToday = (day: number) =>
+		currentDate.year === viewYear && currentDate.month === viewMonth && currentDate.day === day;
 
 	return (
-		<div>
-			<div
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-					marginBottom: "2rem",
-					paddingBottom: "1rem",
-					borderBottom: "1px solid var(--border-light)",
-				}}
-			>
-				<button type="button" onClick={handlePrev} className="icon-btn">
-					<ChevronLeft size={32} strokeWidth={1} />
-				</button>
-				<div
-					style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}
-				>
-					<h2
-						style={{
-							fontSize: "3rem",
-							lineHeight: "1",
-							textTransform: "uppercase",
-							letterSpacing: "0.02em",
-						}}
-					>
-						{getNepaliMonthName(viewMonth)}
-					</h2>
-					<span
-						style={{
-							fontFamily: "var(--font-body)",
-							letterSpacing: "0.2em",
-							opacity: 0.5,
-							textTransform: "uppercase",
-							fontSize: "0.9rem",
-						}}
-					>
-						{viewYear}
-						{isSyncing && (
-							<span style={{ color: "var(--accent)", marginLeft: "0.5rem" }}>[SYNC]</span>
-						)}
-					</span>
+		<div className="calendar-panel">
+			<div className="calendar-header">
+				<div className="calendar-title">
+					<h2>{monthName}</h2>
+					<span>{viewYear} BS</span>
 				</div>
-				<button type="button" onClick={handleNext} className="icon-btn">
-					<ChevronRight size={32} strokeWidth={1} />
-				</button>
+				<div className="calendar-nav">
+					<button type="button" onClick={handlePrev} className="icon-btn" title="Previous Month">
+						<ChevronLeft size={20} />
+					</button>
+					<button type="button" onClick={handleNext} className="icon-btn" title="Next Month">
+						<ChevronRight size={20} />
+					</button>
+				</div>
 			</div>
 
 			<div className="calendar-grid">
-				{weekDays.map((day) => (
-					<div key={day} className="calendar-header">
-						{day}
+				{["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"].map((d) => (
+					<div key={d} className="weekday-label">
+						{d}
 					</div>
 				))}
+
+				{Array.from({ length: startWeekday }).map((_, i) => (
+					// biome-ignore lint/suspicious/noArrayIndexKey: stable for a given view month
+					<div key={`empty-${viewYear}-${viewMonth}-${i}`} className="calendar-day disabled" />
+				))}
+
+				{Array.from({ length: daysInMonth }).map((_, i) => {
+					const day = i + 1;
+					const marked = isMarked(viewYear, viewMonth, day);
+					const today = isToday(day);
+
+					return (
+						<button
+							key={`${viewYear}-${viewMonth}-${day}`}
+							type="button"
+							onClick={() => onToggle(day)}
+							disabled={isSyncing}
+							className={`calendar-day ${marked ? "marked" : ""} ${today ? "today" : ""}`}
+							style={{ cursor: isSyncing ? "wait" : "pointer" }}
+						>
+							<span className="day-number">{day}</span>
+							{marked && <div className="mark-indicator" />}
+						</button>
+					);
+				})}
 			</div>
-			<div className="calendar-grid">{days}</div>
 		</div>
 	);
 };

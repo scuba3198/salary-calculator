@@ -1,64 +1,30 @@
 import { Loader2, LogIn, UserPlus } from "lucide-react";
 import { useState } from "react";
-import { supabase } from "../utils/supabase";
+import { dispatch, useAppState } from "../hooks/useAppRuntime";
 
 export default function Auth() {
-	const [loading, setLoading] = useState<boolean>(false);
+	const state = useAppState();
+	const { loadingAuth, globalAlert } = state;
+
+	const [isSignUp, setIsSignUp] = useState<boolean>(false);
 	const [email, setEmail] = useState<string>("");
 	const [fullName, setFullName] = useState<string>("");
 	const [password, setPassword] = useState<string>("");
 	const [confirmPassword, setConfirmPassword] = useState<string>("");
-	const [isSignUp, setIsSignUp] = useState<boolean>(false);
-	const [error, setError] = useState<string | null>(null);
-	const [message, setMessage] = useState<string | null>(null);
+	const [localError, setLocalError] = useState<string | null>(null);
 
-	const handleAuth = async (e: React.FormEvent<HTMLFormElement>) => {
+	const handleAuth = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		setLoading(true);
-		setError(null);
-		setMessage(null);
+		setLocalError(null);
 
-		// Validation
-		if (isSignUp && password !== confirmPassword) {
-			setError("Passwords do not match");
-			setLoading(false);
-			return;
-		}
-
-		try {
-			if (isSignUp) {
-				// Try to sign up
-				const { error, data } = await supabase.auth.signUp({
-					email,
-					password,
-					options: {
-						data: {
-							full_name: fullName,
-						},
-					},
-				});
-				if (error) throw error;
-
-				if (data?.user && !data.session) {
-					setMessage("Account created! Please check your email for the confirmation link.");
-				} else {
-					setMessage("Account created! You are logged in.");
-				}
-			} else {
-				const { error } = await supabase.auth.signInWithPassword({
-					email,
-					password,
-				});
-				if (error) throw error;
+		if (isSignUp) {
+			if (password !== confirmPassword) {
+				setLocalError("Passwords do not match");
+				return;
 			}
-		} catch (err) {
-			if (err instanceof Error) {
-				setError(err.message);
-			} else {
-				setError("An unknown error occurred");
-			}
-		} finally {
-			setLoading(false);
+			dispatch({ _tag: "SubmitSignUp", email, password, fullName });
+		} else {
+			dispatch({ _tag: "SubmitLogin", email, password });
 		}
 	};
 
@@ -228,7 +194,7 @@ export default function Auth() {
 					</div>
 				)}
 
-				{error && (
+				{(localError || globalAlert) && (
 					<div
 						style={{
 							padding: "0.75rem",
@@ -238,37 +204,23 @@ export default function Auth() {
 							fontSize: "0.875rem",
 						}}
 					>
-						{error}
-					</div>
-				)}
-
-				{message && (
-					<div
-						style={{
-							padding: "0.75rem",
-							borderRadius: "0.5rem",
-							background: "#dcfce7",
-							color: "#16a34a",
-							fontSize: "0.875rem",
-						}}
-					>
-						{message}
+						{localError || globalAlert}
 					</div>
 				)}
 
 				<button
 					type="submit"
-					disabled={loading}
+					disabled={loadingAuth}
 					className="primary-btn"
 					style={{
 						width: "100%",
 						padding: "1rem",
 						fontWeight: "600",
-						cursor: loading ? "not-allowed" : "pointer",
-						opacity: loading ? 0.7 : 1,
+						cursor: loadingAuth ? "not-allowed" : "pointer",
+						opacity: loadingAuth ? 0.7 : 1,
 					}}
 				>
-					{loading && <Loader2 className="animate-spin" size={20} />}
+					{loadingAuth && <Loader2 className="animate-spin" size={20} />}
 					{isSignUp ? "Sign Up" : "Login"}
 				</button>
 			</form>
@@ -284,8 +236,8 @@ export default function Auth() {
 					type="button"
 					onClick={() => {
 						setIsSignUp(!isSignUp);
-						setError(null);
-						setMessage(null);
+						setLocalError(null);
+						dispatch({ _tag: "DismissAlert" });
 					}}
 					style={{
 						background: "none",

@@ -21,10 +21,37 @@
 ---
 
 <p align="left">
-Modern, fast, and feature-rich. The <b>Nepali Salary Calculator</b> is a premium workspace designed to solve the complexity of tracking workdays across multiple organizations using the native <b>Bikram Sambat (B.S.)</b> calendar. Now fully migrated to <b>TypeScript</b> for industrial-grade stability.
-</p>
+Modern, fast, and feature-rich. The **Nepali Salary Calculator** is a premium workspace designed to solve the complexity of tracking workdays across multiple organizations using the native **Bikram Sambat (B.S.)** calendar.
+
+The application is powered by a **Pure Effect-TS Architecture**, where React serves strictly as a logic-less view layer ("Dumb Terminal") while Effect manages the entire application lifecycle, state transitions, and concurrency.
 
 </div>
+
+---
+
+## 🏗️ Architectural Blueprint
+
+The system follows a strict **Reactive Loop** where all side effects are managed by the Effect Runtime.
+
+```mermaid
+graph TD
+    subgraph "React (View Layer)"
+        UI["App Components"]
+    end
+
+    subgraph "Effect Runtime (The Engine)"
+        Queue["AppIntent Queue"]
+        Handlers["Intent Handlers"]
+        Services["Effect Services (Supabase, Auth, Install)"]
+        State["SubscriptionRef (Single Source of Truth)"]
+    end
+
+    UI -- "dispatch(Intent)" --> Queue
+    Queue -- "take" --> Handlers
+    Handlers -- "execute" --> Services
+    Services -- "update" --> State
+    State -- "stateStream" --> UI
+```
 
 ---
 
@@ -41,53 +68,50 @@ Modern, fast, and feature-rich. The <b>Nepali Salary Calculator</b> is a premium
 ### 🛡️ Smart Guest Protocol
 > **No account? No problem.**
 *   **Instant Access**: Use the full suite of tools immediately via "Transient Guest Mode".
-*   **Persistent Drafts**: Your settings and dates are safely stored in your browser while you test.
-*   **Merge Catalyst**: When you're ready to create an account, one click merges all your local guest data into the cloud. **Zero data loss.**
+*   **Effect Persistence**: Your settings and dates are safely synced to `localStorage` via an Effect stream.
+*   **Merge Catalyst**: When you're ready to create an account, existing guest data is automatically migrated. **Zero data loss.**
 
 ### 🏢 Elite Workspace Management
 *   **Unlimited Organizations**: Manage concurrent jobs or clients in separate silos.
+*   **Race-Condition Free**: Switching workspaces interrupts previous sync fibers, ensuring zero state pollution.
 *   **Granular Economics**: Fine-tune hourly rates (Rs), daily hours, and TDS (%) per workspace.
-*   **Switching Engine**: A lightning-fast interface to jump between organizations.
 
 ### 🇳🇵 Native Calendar Precision
-*   **Pure Nepali Experience**: Fully integrated B.S. calendar system.
+*   **Pure Nepali Experience**: Fully integrated Bikram Sambat system.
 *   **Holiday & Weekend Intel**: Automatic visual cues for non-working days.
 *   **Intuitive Marking**: A "tap-to-log" system that makes tracking feel like a breeze.
 
 ### 📊 Financial Command Center
 *   **Live Gross/Net Logic**: Real-time salary projection as you toggle dates.
-*   **TDS Automation**: Accurate tax deductions calculated instantly based on individual workspace laws.
-*   **Historical Accuracy**: View and verify stats for any month or year.
+*   **Purity First**: All calculations are pure, synchronous functions, ensuring deterministic results across any platform.
 
 ---
 
 ## 🛠️ The Technology Core
 
-The application is built on a "Lean-Core" architecture, ensuring maximum performance without bloated dependencies.
-
 | Technology | Purpose |
 | :--- | :--- |
-| **TypeScript** | Type-safe development for enterprise reliability. |
-| **React 19** | Modern UI primitives and state synchronization. |
-| **Vite 7** | Next-generation build tool for instant HMR. |
-| **Supabase** | Hybrid PostgreSQL & Real-time Auth backbone. |
+| **Effect-TS** | The "Operating System" — state, concurrency, and logic. |
+| **React 19** | The "Dumb Screen" — rendering UI via `useSyncExternalStore`. |
+| **TypeScript** | Strict, industrial-grade type safety with `@tsconfig/strictest`. |
+| **Supabase** | Backend infrastructure (PostgreSQL & Real-time Auth). |
 | **Vanilla CSS** | Pure, hand-optimized styles for a "Glassmorphism" look. |
-| **JS-B.S.** | High-precision Nepali date conversion logic. |
+| **PWA** | Offline-first functionality with specialized stress-tested resilience. |
 
 ---
 
 ## 🧪 Testing Architecture
 
-We believe in a rigorous, blazingly fast testing pipeline to guarantee stability and prevent regressions:
+We employ an **Ironclad Purity Protocol** to guarantee 100% reliability:
 
-- **Unit & Core Logic**: Powered by **Vitest**. Complex Nepal tax deductions, hours, and TDS math are isolated into dependency-free pure functions for millisecond execution.
-- **Component DOM & Accessibility**: Validated via **React Testing Library** and **jest-axe**. Ensures semantic HTML, optimal contrast ratios, and flawless rendering without rendering violations.
-- **End-to-End (E2E)**: Powered by **Playwright**. Employs real browser engines (Chromium, Firefox, WebKit) to concurrently simulate live guest user journeys, PWA manifest injections, and Modal lifecycle events.
-- **Continuous Integration**: A secure `.github/workflows/ci.yml` pipeline automatically triggers parallel formatting checks, linting, tests, and production build verification on every push and pull request.
+- **Logic Audit**: Automated `grep` scans ensure **zero forbidden patterns** (`async/await`, `try/catch`, `let`, `for`) exist in the production logic.
+- **PWA Stress Testing**: Cross-browser **Playwright** suite that simulates extreme hardware/network conditions (Lie-Fi, storage wipe, rapid orientation change).
+- **Unit Math**: **Vitest** verified calculations for Nepali tax laws and hours.
+- **Continuous Integration**: Sequential fail-fast pipeline executing Typecheck → Lint → Unit → Build → E2E Stress.
 
 ---
 
-## 🚀 Speed Start
+## 🚀 speed Start
 
 ### 1. Zero-Config Install
 ```bash
@@ -96,23 +120,24 @@ cd salary-calculator
 npm install
 ```
 
-### 2. Pulse Check (Local Dev)
+### 2. Local Development
 ```bash
 npm run dev
 ```
 
-### 3. Production Hardening
+### 3. Verification Suite
 ```bash
-npm run build
-npm run preview
+# Run full stability check
+npm run check && npm run typecheck && npm run test
 ```
 
 ---
 
 ## 📜 Repository Health
 
-- `npm run lint`: Maintain industrial-standard code quality.
-- `deploy.yml`: Automated CI/CD pipeline targeting GitHub Pages.
+- `npm run lint`: Maintain industrial-standard code quality via Biome.
+- `ci.yml`: Automated verification pipeline.
+- `deploy.yml`: Automated CD pipeline for GitHub Pages.
 
 ---
 

@@ -1,96 +1,10 @@
 import { Smartphone, X } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useAppStore } from "../store";
-
-// Register the beforeinstallprompt event type
-interface BeforeInstallPromptEvent extends Event {
-	readonly platforms: string[];
-	readonly userChoice: Promise<{
-		outcome: "accepted" | "dismissed";
-		platform: string;
-	}>;
-	prompt(): Promise<void>;
-}
+import { dispatch, useAppState } from "../hooks/useAppRuntime";
 
 export default function InstallReminder() {
-	const { setGlobalAlert } = useAppStore();
-	const [isVisible, setIsVisible] = useState(false);
-	const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+	const { isInstallPromptVisible } = useAppState();
 
-	useEffect(() => {
-		const handleBeforeInstallPrompt = (e: Event) => {
-			const event = e as BeforeInstallPromptEvent;
-			// Prevent the mini-infobar from appearing on mobile
-			event.preventDefault();
-			// Stash the event so it can be triggered later.
-			setDeferredPrompt(event);
-
-			// Only show the banner if we are on mobile and not already standalone
-			const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-			const isStandalone =
-				window.matchMedia("(display-mode: standalone)").matches ||
-				("standalone" in navigator &&
-					(navigator as Navigator & { standalone?: boolean }).standalone);
-
-			if (isMobile && !isStandalone) {
-				setIsVisible(true);
-			}
-		};
-
-		const handleAppInstalled = () => {
-			// Clear the deferredPrompt and hide the banner
-			setDeferredPrompt(null);
-			setIsVisible(false);
-			console.log("PWA was installed");
-		};
-
-		window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-		window.addEventListener("appinstalled", handleAppInstalled);
-
-		// Fallback detection for browsers that don't support beforeinstallprompt (like iOS Safari)
-		const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-		const isStandalone =
-			window.matchMedia("(display-mode: standalone)").matches ||
-			("standalone" in navigator && (navigator as Navigator & { standalone?: boolean }).standalone);
-
-		if (isMobile && !isStandalone && !deferredPrompt) {
-			setIsVisible(true);
-		}
-
-		return () => {
-			window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-			window.removeEventListener("appinstalled", handleAppInstalled);
-		};
-	}, [deferredPrompt]);
-
-	const handleInstallClick = async () => {
-		if (deferredPrompt) {
-			// Show the install prompt
-			await deferredPrompt.prompt();
-			// Wait for the user to respond to the prompt
-			const { outcome } = await deferredPrompt.userChoice;
-			console.log(`User response to the install prompt: ${outcome}`);
-
-			if (outcome === "accepted") {
-				// The appinstalled event will hide the banner
-				setDeferredPrompt(null);
-			}
-		} else {
-			// Fallback: Just dismiss and hope they use the browser menu
-			// On iOS, this is the only way (remind them to "Add to Home Screen")
-			setGlobalAlert(
-				"To install: Tap the browser menu (usually three dots or share icon) and select 'Install app' or 'Add to Home Screen'.",
-			);
-			setIsVisible(false);
-		}
-	};
-
-	const dismiss = () => {
-		// Just hide it for this session as requested
-		setIsVisible(false);
-	};
-
-	if (!isVisible) return null;
+	if (!isInstallPromptVisible) return null;
 
 	return (
 		<div
@@ -117,7 +31,7 @@ export default function InstallReminder() {
 			<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
 				<button
 					type="button"
-					onClick={handleInstallClick}
+					onClick={() => dispatch({ _tag: "PromptInstall" })}
 					style={{
 						background: "var(--accent)",
 						border: "none",
@@ -133,7 +47,7 @@ export default function InstallReminder() {
 				</button>
 				<button
 					type="button"
-					onClick={dismiss}
+					onClick={() => dispatch({ _tag: "DismissInstallPrompt" })}
 					style={{
 						background: "none",
 						border: "none",
