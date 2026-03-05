@@ -58,12 +58,19 @@ const SalaryStats = () => {
 								const decoded = Schema.decodeUnknownOption(HourlyRateSchema)(Number(e.target.value));
 								if (decoded._tag === "Some") {
 									dispatch({ _tag: "SetHourlyRate", value: decoded.value });
+								} else {
+									e.target.value = hourlyRate ? hourlyRate.toString() : "";
 								}
 							}
 						}}
 						disabled={isSyncing}
 						placeholder="0"
 						min="0"
+						onKeyDown={(e) => {
+							if (["-", "e", "E", "+"].includes(e.key)) {
+								e.preventDefault();
+							}
+						}}
 					/>
 				</div>
 
@@ -79,6 +86,8 @@ const SalaryStats = () => {
 							const validValue = decode(val);
 							if (validValue._tag === "Some") {
 								dispatch({ _tag: "SetDailyHours", value: validValue.value });
+							} else {
+								e.target.value = dailyHours ? dailyHours.toString() : "";
 							}
 						}}
 						disabled={isSyncing}
@@ -86,6 +95,11 @@ const SalaryStats = () => {
 						step="0.5"
 						min="0"
 						max="24"
+						onKeyDown={(e) => {
+							if (["-", "e", "E", "+"].includes(e.key)) {
+								e.preventDefault();
+							}
+						}}
 					/>
 				</div>
 
@@ -103,6 +117,8 @@ const SalaryStats = () => {
 								const decoded = Schema.decodeUnknownOption(TdsSchema)(Number(e.target.value));
 								if (decoded._tag === "Some") {
 									dispatch({ _tag: "SetTdsPercentage", value: decoded.value });
+								} else {
+									e.target.value = tdsPercentage !== null ? tdsPercentage.toString() : "";
 								}
 							}
 						}}
@@ -110,6 +126,11 @@ const SalaryStats = () => {
 						placeholder="None"
 						min="0"
 						max="100"
+						onKeyDown={(e) => {
+							if (["-", "e", "E", "+"].includes(e.key)) {
+								e.preventDefault();
+							}
+						}}
 					/>
 				</div>
 			</div>
