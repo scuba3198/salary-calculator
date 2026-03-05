@@ -1,23 +1,34 @@
-import { act, render } from "@testing-library/react";
-import { axe } from "jest-axe";
-import { describe, expect, it } from "vitest";
-import { AppProvider } from "../store";
+import { render } from "@testing-library/react";
+import { axe, toHaveNoViolations } from "jest-axe";
+import { expect, test, vi } from "vitest";
 import SalaryStats from "./SalaryStats";
 
-describe("SalaryStats Component", () => {
-    it("should have no accessibility violations", async () => {
-        let container: HTMLElement | undefined;
-        await act(async () => {
-            const result = render(
-                <AppProvider>
-                    <SalaryStats />
-                </AppProvider>
-            );
-            container = result.container;
-        });
+expect.extend(toHaveNoViolations);
 
-        if (!container) throw new Error("Container not found");
-        const results = await axe(container);
-        expect(results).toHaveNoViolations();
-    });
+// Mock the app runtime hook
+vi.mock("../hooks/useAppRuntime", () => ({
+	useAppState: () => ({
+		markedDates: {},
+		viewYear: 2082,
+		viewMonth: 0,
+		organizations: [
+			{
+				id: "guest",
+				name: "Draft Workspace",
+				hourly_rate: 0,
+				daily_hours: 8,
+				tds_percentage: null,
+			},
+		],
+		currentOrgId: "guest",
+		isSyncing: false,
+	}),
+	dispatch: vi.fn(),
+}));
+
+test("SalaryStats should have no accessibility violations", async () => {
+	const { container } = render(<SalaryStats />);
+
+	const results = await axe(container);
+	expect(results).toHaveNoViolations();
 });

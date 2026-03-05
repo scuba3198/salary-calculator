@@ -138,7 +138,6 @@ h6 {
 }
 
 @media (max-width: 600px) {
-
 	.header-actions,
 	.user-controls {
 		gap: 1rem;

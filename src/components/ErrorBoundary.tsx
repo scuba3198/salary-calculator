@@ -1,63 +1,120 @@
-import React from "react";
+import { Effect } from "effect";
+import { AlertTriangle, RefreshCcw } from "lucide-react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 
 interface Props {
-	children: React.ReactNode;
+	children: ReactNode;
 }
 
 interface State {
 	hasError: boolean;
 	error: Error | null;
-	errorInfo: React.ErrorInfo | null;
 }
 
-class ErrorBoundary extends React.Component<Props, State> {
-	constructor(props: Props) {
-		super(props);
-		this.state = { hasError: false, error: null, errorInfo: null };
-	}
+export default class ErrorBoundary extends Component<Props, State> {
+	public override state: State = {
+		hasError: false,
+		error: null,
+	};
 
-	static getDerivedStateFromError(error: Error): Partial<State> {
+	public static getDerivedStateFromError(error: Error): State {
 		return { hasError: true, error };
 	}
 
-	override componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-		console.error("Uncaught error:", error, errorInfo);
-		this.setState({ errorInfo });
+	public override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+		const logPayload = {
+			error: error.message,
+			stack: error.stack,
+			componentStack: errorInfo.componentStack,
+			timestamp: new Date().toISOString(),
+		};
+
+		// Use Effect for structured logging even in the boundary
+		// We use runSync because we are in a synchronous React lifecycle
+		Effect.runSync(Effect.logError(logPayload));
 	}
 
-	override render() {
+	private handleReset = () => {
+		window.location.reload();
+	};
+
+	public override render() {
 		if (this.state.hasError) {
 			return (
 				<div
 					style={{
-						padding: "2rem",
-						color: "white",
-						background: "#333",
 						minHeight: "100vh",
+						display: "flex",
+						flexDirection: "column",
+						alignItems: "center",
+						justifyContent: "center",
+						padding: "2rem",
+						textAlign: "center",
+						background: "var(--canvas)",
+						color: "var(--text-main)",
 					}}
 				>
-					<h1>Something went wrong.</h1>
-					<details style={{ whiteSpace: "pre-wrap", marginTop: "1rem" }}>
-						{this.state.error?.toString()}
-						<br />
-						{this.state.errorInfo?.componentStack}
-					</details>
-					<button
-						type="button"
-						onClick={() => {
-							localStorage.clear();
-							window.location.reload();
-						}}
+					<div
 						style={{
-							marginTop: "1rem",
-							padding: "0.5rem 1rem",
-							background: "red",
-							color: "white",
-							border: "none",
+							maxWidth: "500px",
+							display: "flex",
+							flexDirection: "column",
+							gap: "1.5rem",
 						}}
 					>
-						Clear Data & Reload
-					</button>
+						<div
+							style={{
+								display: "flex",
+								justifyContent: "center",
+								color: "var(--accent)",
+							}}
+						>
+							<AlertTriangle size={64} strokeWidth={1.5} />
+						</div>
+
+						<h1 style={{ fontSize: "2rem", margin: 0 }}>Something went wrong</h1>
+
+						<p style={{ opacity: 0.8, lineHeight: 1.6 }}>
+							An unexpected error occurred. We've logged the details and you can try refreshing the
+							application.
+						</p>
+
+						{this.state.error && (
+							<pre
+								style={{
+									padding: "1rem",
+									background: "var(--surface)",
+									border: "1px solid var(--border-light)",
+									borderRadius: "0.5rem",
+									fontSize: "0.8rem",
+									textAlign: "left",
+									overflowX: "auto",
+									maxHeight: "200px",
+									opacity: 0.7,
+								}}
+							>
+								{this.state.error.message}
+							</pre>
+						)}
+
+						<button
+							type="button"
+							onClick={this.handleReset}
+							className="primary-btn"
+							style={{
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								gap: "0.75rem",
+								padding: "1rem 2rem",
+								fontSize: "1rem",
+								fontWeight: "600",
+							}}
+						>
+							<RefreshCcw size={20} />
+							Refresh Application
+						</button>
+					</div>
 				</div>
 			);
 		}
@@ -65,5 +122,3 @@ class ErrorBoundary extends React.Component<Props, State> {
 		return this.props.children;
 	}
 }
-
-export default ErrorBoundary;
