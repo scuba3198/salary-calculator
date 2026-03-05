@@ -24,6 +24,18 @@ export const AuthServiceLive = Layer.succeed(AuthService, {
 			emit(Effect.succeed(Chunk.make({ event, user: session?.user ?? null })));
 		});
 
+		// Emit initial session immediately
+		supabase.auth.getSession().then(({ data: { session } }) => {
+			emit(
+				Effect.succeed(
+					Chunk.make({
+						event: "INITIAL_SESSION",
+						user: session?.user ?? null,
+					}),
+				),
+			);
+		});
+
 		return Effect.sync(() => {
 			subscription.unsubscribe();
 		});

@@ -18,17 +18,19 @@ export function __bridgeInit(
 ) {
 	intentQueue = queue;
 	// Drain the state stream
-	stateStream.pipe(
-		Stream.tap((state) =>
-			Effect.sync(() => {
-				snapshot = state;
-				for (const listener of listeners) {
-					listener();
-				}
-			}),
+	Effect.runPromise(
+		stateStream.pipe(
+			Stream.tap((s) =>
+				Effect.sync(() => {
+					snapshot = s;
+					for (const listener of listeners) {
+						listener();
+					}
+				}),
+			),
+			Stream.runDrain,
+			Effect.forkDaemon, // Ensure it lives outside the boot scope
 		),
-		Stream.runDrain,
-		Effect.forkDaemon, // Ensure it lives outside the boot scope
 	);
 }
 

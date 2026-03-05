@@ -23,10 +23,18 @@ runtime.runPromise(appProgram).then(({ stateStream, intentQueue }) => {
 	// 2. Mount the React application
 	const rootElement = document.getElementById("root");
 	if (rootElement) {
-		ReactDOM.createRoot(rootElement).render(
+		const win = window as any;
+		if (!win.__reactRoot) {
+			win.__reactRoot = ReactDOM.createRoot(rootElement);
+		} else {
+		}
+
+		win.__reactRoot.render(
 			<React.StrictMode>
 				<App />
 			</React.StrictMode>,
 		);
 	}
+}).catch(err => {
+	console.error("[Main] Critical initialization failure:", err);
 });

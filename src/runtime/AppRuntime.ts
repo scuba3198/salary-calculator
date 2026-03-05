@@ -40,24 +40,24 @@ export const appProgram = Effect.gen(function* () {
 		Stream.tap(({ user }) => Queue.offer(intentQueue, { _tag: "AuthChanged", user })),
 		Stream.runDrain,
 		Effect.interruptible,
-		Effect.fork,
+		Effect.forkDaemon,
 	);
 
 	// 2. Persistence Stream (watches state, writes to localStorage)
 	yield* stateRef.changes.pipe(
 		Stream.tap((state) =>
 			Effect.sync(() => {
-				localStorage.setItem("app_theme", state.theme);
+				localStorage.setItem("theme", state.theme);
 				document.documentElement.setAttribute("data-theme", state.theme);
-				if (state.currentOrgId) localStorage.setItem("last_org_id", state.currentOrgId);
+				if (state.currentOrgId) localStorage.setItem("currentOrgId", state.currentOrgId);
 				if (!state.user) {
-					localStorage.setItem("marked_dates", JSON.stringify(state.markedDates));
+					localStorage.setItem("markedDates", JSON.stringify(state.markedDates));
 					localStorage.setItem("organizations", JSON.stringify(state.organizations));
 				}
 			}),
 		),
 		Stream.runDrain,
-		Effect.fork,
+		Effect.forkDaemon,
 	);
 
 	// 3. Clock tick (updates currentDate every 60s)
@@ -67,7 +67,7 @@ export const appProgram = Effect.gen(function* () {
 			yield* SubscriptionRef.update(stateRef, (s) => ({ ...s, currentDate: now }));
 		}),
 		Schedule.spaced("60 seconds"),
-	).pipe(Effect.fork);
+	).pipe(Effect.forkDaemon);
 
 	// 4. Install Prompt Stream
 	yield* installService.installEvents.pipe(
@@ -85,7 +85,7 @@ export const appProgram = Effect.gen(function* () {
 			}),
 		),
 		Stream.runDrain,
-		Effect.fork,
+		Effect.forkDaemon,
 	);
 
 	// 5. Main Intent Loop
@@ -190,7 +190,7 @@ export const appProgram = Effect.gen(function* () {
 		}),
 	);
 
-	yield* Effect.fork(processIntentLoop);
+	yield* Effect.forkDaemon(processIntentLoop);
 
 	return {
 		stateStream: stateRef.changes,
