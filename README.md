@@ -102,33 +102,48 @@ graph TD
 
 ## 🧪 Testing Architecture
 
-We employ an **Ironclad Purity Protocol** to guarantee 100% reliability:
+We employ a **Fail-Fast Verification Suite** to guarantee reliability:
 
-- **Logic Audit**: Automated `grep` scans ensure **zero forbidden patterns** (`async/await`, `try/catch`, `let`, `for`) exist in the production logic.
+- **Forbidden Pattern Guard**: `npm run forbidden:check` fails CI on disallowed Effect anti-patterns (e.g. `Effect.runSync`, `Effect.runPromise`, `console.*`, broad `catchAll/mapError`).
+- **Effect Diagnostics**: `npm run effect:check` enforces Effect Language Service checks in CI.
 - **PWA Stress Testing**: Cross-browser **Playwright** suite that simulates extreme hardware/network conditions (Lie-Fi, storage wipe, rapid orientation change).
 - **Unit Math**: **Vitest** verified calculations for Nepali tax laws and hours.
-- **Continuous Integration**: Sequential fail-fast pipeline executing Typecheck → Lint → Unit → Build → E2E Stress.
+- **Continuous Integration**: Sequential fail-fast pipeline executing Lint → Format/Check → Forbidden Pattern Guard → Effect Diagnostics → Typecheck → Unit → Build → E2E Stress.
 
 ---
 
-## 🚀 speed Start
+## 🚀 Quick Start
 
 ### 1. Zero-Config Install
 ```bash
 git clone https://github.com/scuba3198/salary-calculator.git
 cd salary-calculator
-npm install
+npm ci
 ```
 
-### 2. Local Development
+### 2. Configure Supabase (required)
+
+Create `.env.local` in the repo root:
+
+```bash
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+```
+
+### 3. Local Development
 ```bash
 npm run dev
 ```
 
-### 3. Verification Suite
+### 4. Verification Suite
 ```bash
-# Run full stability check
-npm run check && npm run typecheck && npm run test
+# CI parity checks (recommended before pushing)
+npm run lint
+npm run check
+npm run forbidden:check
+npm run effect:check
+npm run typecheck
+npm test
 ```
 
 ---
