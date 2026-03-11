@@ -3,6 +3,7 @@ import type { DbOrganization, Organization, OrganizationId } from "../../types/a
 import { organizationFromDb } from "../../types/app.types";
 import type { AppState } from "../AppState";
 import type { SupabaseServiceApi } from "../services/SupabaseService";
+import { LocalStorageService } from "../services/LocalStorageService";
 
 export const handleAddOrg = (
 	name: string,
@@ -40,7 +41,8 @@ export const handleAddOrg = (
 			currentOrgId: Option.some(newOrg.id),
 			markedDates: {}, // Force clear for new workspace
 		}));
-		localStorage.setItem("last_org_id", newOrg.id);
+		const storage = yield* LocalStorageService;
+		yield* storage.saveLastOrgId(newOrg.id).pipe(Effect.catchAll(() => Effect.void));
 	});
 
 export const handleSwitchOrg = (
@@ -58,7 +60,8 @@ export const handleSwitchOrg = (
 			markedDates: {}, // Clear immediately while syncing
 			isSyncing: true,
 		}));
-		localStorage.setItem("last_org_id", orgId);
+		const storage = yield* LocalStorageService;
+		yield* storage.saveLastOrgId(orgId).pipe(Effect.catchAll(() => Effect.void));
 
 		if (
 			Option.isSome(state.user) &&
@@ -128,7 +131,10 @@ export const handleDeleteOrg = (
 			state.currentOrgId.value === id &&
 			Option.isSome(stateAfterDelete.currentOrgId)
 		) {
-			localStorage.setItem("last_org_id", stateAfterDelete.currentOrgId.value);
+			const storage = yield* LocalStorageService;
+			yield* storage
+				.saveLastOrgId(stateAfterDelete.currentOrgId.value)
+				.pipe(Effect.catchAll(() => Effect.void));
 
 			const attendance = yield* supabase.query<import("../../types/app.types").AttendancePartial[]>(
 				"fetchAttendance",

@@ -9,6 +9,7 @@ import {
 	handleLogin,
 	handleSignUp,
 } from "./handlers/authHandlers";
+import { LocalStorageService } from "./services/LocalStorageService";
 import { AttendanceService } from "./services/AttendanceService";
 import { AuthService } from "./services/AuthService";
 import { type BeforeInstallPromptEvent, InstallService } from "./services/InstallService";
@@ -25,6 +26,7 @@ export const appProgram = Effect.gen(function* () {
 	const orgs = yield* OrgService;
 	const attendance = yield* AttendanceService;
 	const settings = yield* SettingsService;
+	const localStorageService = yield* LocalStorageService;
 	const stateRef = yield* SubscriptionRef.make<AppState>(initialAppState);
 	const intentQueue = yield* Queue.unbounded<AppIntent>();
 	const syncFiberRef = yield* Ref.make<Fiber.RuntimeFiber<void, unknown> | null>(null);
@@ -37,19 +39,16 @@ export const appProgram = Effect.gen(function* () {
 		Effect.forkDaemon,
 	);
 
-	// 2. Persistence Stream (watches state, writes to localStorage)
+	// 2. Persistence Stream (watches state, writes to localStorage via LocalStorageService)
 	yield* stateRef.changes.pipe(
 		Stream.tap((state) =>
-			Effect.sync(() => {
-				localStorage.setItem("theme", state.theme);
-				document.documentElement.setAttribute("data-theme", state.theme);
-				if (Option.isSome(state.currentOrgId)) {
-					localStorage.setItem("currentOrgId", state.currentOrgId.value);
-				}
-				if (Option.isNone(state.user)) {
-					localStorage.setItem("markedDates", JSON.stringify(state.markedDates));
-					localStorage.setItem("organizations", JSON.stringify(state.organizations));
-				}
+			Effect.gen(function* () {
+				yield* localStorageService.persistFromState(state).pipe(
+					Effect.catchAll(() => Effect.void),
+				);
+				yield* Effect.sync(() => {
+					document.documentElement.setAttribute("data-theme", state.theme);
+				});
 			}),
 		),
 		Stream.runDrain,

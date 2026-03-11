@@ -12,6 +12,7 @@ import { organizationFromDb } from "../../types/app.types";
 import type { AppState } from "../AppState";
 import type { AuthServiceApi } from "../services/AuthService";
 import type { SupabaseServiceApi } from "../services/SupabaseService";
+import { LocalStorageService } from "../services/LocalStorageService";
 
 export const handleAuthChanged = (
 	user: User | null,
@@ -28,76 +29,45 @@ export const handleAuthChanged = (
 		}
 
 		if (!user) {
-			// Guest Mode
+			// Guest Mode - load guest state from LocalStorageService
+			const storage = yield* LocalStorageService;
+			const savedOrgs = yield* storage.loadOrganizations.pipe(
+				Effect.catchAll(() => Effect.succeed<Organization[]>([])),
+			);
+			const storedCurrentOrgId = yield* storage.loadCurrentOrgId.pipe(
+				Effect.catchAll(() => Effect.succeed(Option.none<OrganizationId>())),
+			);
+
 			yield* SubscriptionRef.update(stateRef, (s) => {
-				const savedOrgsRaw: unknown = JSON.parse(localStorage.getItem("organizations") || "[]");
+				const organizations =
+					savedOrgs.length > 0
+						? savedOrgs
+						: [
+								{
+									id: "guest" as OrganizationId,
+									name: "Guest Workspace",
+									hourly_rate: 500,
+									daily_hours: 8,
+									tds_percentage: Option.some(10),
+									user_id: "" as UserId,
+									color: Option.none(),
+									created_at: Option.some(new Date().toISOString()),
+									updated_at: Option.none(),
+								} as Organization,
+							];
 
-				const isOption = (u: unknown): u is Option.Option<unknown> => {
-					if (typeof u !== "object" || u === null) return false;
-					if (!("_tag" in u)) return false;
-					const tag = (u as { readonly _tag?: unknown })._tag;
-					return tag === "Some" || tag === "None";
-				};
-
-				const savedOrgs = Array.isArray(savedOrgsRaw)
-					? savedOrgsRaw.map((org): Organization => {
-							const row = org as Record<string, unknown>;
-							const id = (row["id"] ?? "guest") as OrganizationId;
-
-							const tdsRaw = row["tds_percentage"];
-							const colorRaw = row["color"];
-							const createdAtRaw = row["created_at"];
-							const updatedAtRaw = row["updated_at"];
-
-							return {
-								id,
-								name: String(row["name"] ?? "Workspace"),
-								hourly_rate: Math.max(
-									Number(row["hourly_rate"] ?? 0),
-									id === ("guest" as OrganizationId) ? 500 : 0,
-								),
-								daily_hours: Number(row["daily_hours"] ?? 8),
-								tds_percentage: isOption(tdsRaw)
-									? (tdsRaw as Option.Option<number>)
-									: Option.fromNullable(typeof tdsRaw === "number" ? tdsRaw : null),
-								user_id: (row["user_id"] ?? "") as UserId,
-								color: isOption(colorRaw)
-									? (colorRaw as Option.Option<string>)
-									: Option.fromNullable(typeof colorRaw === "string" ? colorRaw : null),
-								created_at: isOption(createdAtRaw)
-									? (createdAtRaw as Option.Option<string>)
-									: Option.fromNullable(typeof createdAtRaw === "string" ? createdAtRaw : null),
-								updated_at: isOption(updatedAtRaw)
-									? (updatedAtRaw as Option.Option<string>)
-									: Option.fromNullable(typeof updatedAtRaw === "string" ? updatedAtRaw : null),
-							};
-						})
-					: [];
+				const currentOrgId =
+					Option.isSome(storedCurrentOrgId) &&
+					organizations.some((o) => o.id === storedCurrentOrgId.value)
+						? storedCurrentOrgId
+						: Option.some("guest" as OrganizationId);
 
 				return {
 					...s,
 					user: Option.none(),
 					loadingAuth: false,
-					organizations:
-						savedOrgs.length > 0
-							? savedOrgs
-							: [
-									{
-										id: "guest" as OrganizationId,
-										name: "Guest Workspace",
-										hourly_rate: 500,
-										daily_hours: 8,
-										tds_percentage: Option.some(10),
-										user_id: "" as UserId,
-										color: Option.none(),
-										created_at: Option.some(new Date().toISOString()),
-										updated_at: Option.none(),
-									} as Organization,
-								],
-					currentOrgId: Option.orElse(
-						Option.fromNullable(localStorage.getItem("currentOrgId") as OrganizationId | null),
-						() => Option.some("guest" as OrganizationId),
-					),
+					organizations,
+					currentOrgId,
 					markedDates: {},
 				};
 			});
@@ -144,7 +114,11 @@ const loadUserData = (
 		);
 		const orgs = orgRows.map(organizationFromDb);
 
-		const savedId = localStorage.getItem("last_org_id");
+		const storage = yield* LocalStorageService;
+		const savedIdOption = yield* storage.loadLastOrgId.pipe(
+			Effect.catchAll(() => Effect.succeed(Option.none<OrganizationId>())),
+		);
+		const savedId = Option.getOrUndefined(savedIdOption);
 		const activeId =
 			orgs.find((o) => o.id === (savedId as OrganizationId | null))?.id ?? orgs[0]?.id ?? null;
 		const activeIdOption = Option.fromNullable(activeId);
@@ -177,7 +151,7 @@ const loadUserData = (
 		}));
 
 		if (Option.isSome(finalActiveId)) {
-			localStorage.setItem("last_org_id", finalActiveId.value);
+			yield* storage.saveLastOrgId(finalActiveId.value).pipe(Effect.catchAll(() => Effect.void));
 
 			// Fetch Attendance
 			const attendance = yield* supabase.query<import("../../types/app.types").AttendancePartial[]>(

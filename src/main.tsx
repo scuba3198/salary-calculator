@@ -12,6 +12,7 @@ import { AppLogger } from "./runtime/services/AppLogger.ts";
 import { AttendanceService } from "./runtime/services/AttendanceService.ts";
 import { AuthService } from "./runtime/services/AuthService.ts";
 import { InstallService } from "./runtime/services/InstallService.ts";
+import { LocalStorageService } from "./runtime/services/LocalStorageService.ts";
 import { OrgService } from "./runtime/services/OrgService.ts";
 import { SettingsService } from "./runtime/services/SettingsService.ts";
 import { SupabaseService } from "./runtime/services/SupabaseService.ts";
@@ -25,6 +26,7 @@ const MainLive = Layer.mergeAll(
 	AppConfigService.Default,
 	AppLogger.Default,
 	SupabaseService.Default,
+	LocalStorageService.Default,
 	AuthService.Default,
 	AttendanceService.Default,
 	InstallService.Default,

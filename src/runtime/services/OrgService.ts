@@ -9,12 +9,14 @@ import type {
 import { organizationFromDb } from "../../types/app.types";
 import type { AppState } from "../AppState";
 import { SupabaseService } from "./SupabaseService";
+import { LocalStorageService } from "./LocalStorageService";
 
 export class OrgService extends Effect.Service<OrgService>()("OrgService", {
 	accessors: true,
-	dependencies: [SupabaseService.Default],
+	dependencies: [SupabaseService.Default, LocalStorageService.Default],
 	effect: Effect.gen(function* () {
 		const supabase = yield* SupabaseService;
+		const localStorageService = yield* LocalStorageService;
 
 		const addOrganization = Effect.fn("OrgService.addOrganization")(function* (
 			name: string,
@@ -46,7 +48,7 @@ export class OrgService extends Effect.Service<OrgService>()("OrgService", {
 				currentOrgId: Option.some(newOrg.id),
 				markedDates: {},
 			}));
-			localStorage.setItem("last_org_id", newOrg.id);
+			yield* localStorageService.saveLastOrgId(newOrg.id).pipe(Effect.catchAll(() => Effect.void));
 		});
 
 		const switchOrganization = Effect.fn("OrgService.switchOrganization")(function* (
@@ -63,7 +65,7 @@ export class OrgService extends Effect.Service<OrgService>()("OrgService", {
 				markedDates: {},
 				isSyncing: true,
 			}));
-			localStorage.setItem("last_org_id", orgId);
+			yield* localStorageService.saveLastOrgId(orgId).pipe(Effect.catchAll(() => Effect.void));
 
 			if (Option.isSome(state.user) && orgId !== "guest") {
 				const attendance = yield* supabase.query<AttendancePartial[]>(
@@ -125,7 +127,9 @@ export class OrgService extends Effect.Service<OrgService>()("OrgService", {
 				state.currentOrgId.value === id &&
 				Option.isSome(stateAfterDelete.currentOrgId)
 			) {
-				localStorage.setItem("last_org_id", stateAfterDelete.currentOrgId.value);
+				yield* localStorageService
+					.saveLastOrgId(stateAfterDelete.currentOrgId.value)
+					.pipe(Effect.catchAll(() => Effect.void));
 				const attendance = yield* supabase.query<AttendancePartial[]>(
 					"fetchAttendance",
 					supabase.client
