@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useAppState, dispatch } from "../hooks/useAppRuntime";
+import { dispatch, useAppState } from "../hooks/useAppRuntime";
 import { getMonthDays, getNepaliMonthName } from "../utils/nepali-calendar";
 
 const Calendar = () => {

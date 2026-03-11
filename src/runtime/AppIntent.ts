@@ -1,16 +1,16 @@
 import type { User } from "@supabase/supabase-js";
-import type { Organization } from "../types/app.types";
+import type { Organization, OrganizationId } from "../types/app.types";
 
 export type AppIntent =
 	// Calendar
 	| { readonly _tag: "SetViewYear"; readonly year: number }
 	| { readonly _tag: "SetViewMonth"; readonly month: number }
 	| {
-		readonly _tag: "ToggleDate";
-		readonly year: number;
-		readonly month: number;
-		readonly day: number;
-	}
+			readonly _tag: "ToggleDate";
+			readonly year: number;
+			readonly month: number;
+			readonly day: number;
+	  }
 
 	// Settings
 	| { readonly _tag: "SetHourlyRate"; readonly value: number | "" }
@@ -19,14 +19,14 @@ export type AppIntent =
 	| { readonly _tag: "ToggleTheme" }
 
 	// Organizations
-	| { readonly _tag: "SwitchOrganization"; readonly orgId: string }
+	| { readonly _tag: "SwitchOrganization"; readonly orgId: OrganizationId }
 	| { readonly _tag: "AddOrganization"; readonly name: string }
 	| {
-		readonly _tag: "UpdateOrganization";
-		readonly id: string;
-		readonly updates: Partial<Organization>;
-	}
-	| { readonly _tag: "DeleteOrganization"; readonly id: string }
+			readonly _tag: "UpdateOrganization";
+			readonly id: OrganizationId;
+			readonly updates: Partial<Organization>;
+	  }
+	| { readonly _tag: "DeleteOrganization"; readonly id: OrganizationId }
 
 	// Data Management
 	| { readonly _tag: "RequestReset" }
@@ -42,11 +42,11 @@ export type AppIntent =
 	// Auth Form (dispatched by the Auth component)
 	| { readonly _tag: "SubmitLogin"; readonly email: string; readonly password: string }
 	| {
-		readonly _tag: "SubmitSignUp";
-		readonly email: string;
-		readonly password: string;
-		readonly fullName: string;
-	}
+			readonly _tag: "SubmitSignUp";
+			readonly email: string;
+			readonly password: string;
+			readonly fullName: string;
+	  }
 
 	// Install
 	| { readonly _tag: "PromptInstall" }

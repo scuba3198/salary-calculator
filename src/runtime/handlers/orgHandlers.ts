@@ -1,23 +1,29 @@
-import { Effect, SubscriptionRef } from "effect";
-import type { Organization } from "../../types/app.types";
+import { Effect, Option, SubscriptionRef } from "effect";
+import type { DbOrganization, Organization, OrganizationId } from "../../types/app.types";
+import { organizationFromDb } from "../../types/app.types";
 import type { AppState } from "../AppState";
-import type { SupabaseService } from "../services/SupabaseService";
+import type { SupabaseServiceApi } from "../services/SupabaseService";
 
 export const handleAddOrg = (
 	name: string,
 	stateRef: SubscriptionRef.SubscriptionRef<AppState>,
-	supabase: SupabaseService,
+	supabase: SupabaseServiceApi,
 ) =>
 	Effect.gen(function* () {
 		const state = yield* SubscriptionRef.get(stateRef);
-		if (!state.user || state.currentOrgId === "guest") return;
+		if (
+			Option.isNone(state.user) ||
+			Option.isNone(state.currentOrgId) ||
+			state.currentOrgId.value === ("guest" as import("../../types/app.types").OrganizationId)
+		)
+			return;
 
-		const newOrg = yield* supabase.query<Organization>(
+		const newOrgRow = yield* supabase.query<DbOrganization>(
 			"addOrg",
 			supabase.client
 				.from("organizations")
 				.insert({
-					user_id: state.user.id,
+					user_id: state.user.value.id,
 					name,
 					hourly_rate: 0,
 					daily_hours: 8,
@@ -26,34 +32,38 @@ export const handleAddOrg = (
 				.select()
 				.single(),
 		);
+		const newOrg = organizationFromDb(newOrgRow);
 
 		yield* SubscriptionRef.update(stateRef, (s) => ({
 			...s,
 			organizations: [...s.organizations, newOrg],
-			currentOrgId: newOrg.id,
+			currentOrgId: Option.some(newOrg.id),
 			markedDates: {}, // Force clear for new workspace
 		}));
 		localStorage.setItem("last_org_id", newOrg.id);
 	});
 
 export const handleSwitchOrg = (
-	orgId: string,
+	orgId: OrganizationId,
 	stateRef: SubscriptionRef.SubscriptionRef<AppState>,
-	supabase: SupabaseService,
+	supabase: SupabaseServiceApi,
 ) =>
 	Effect.gen(function* () {
 		const state = yield* SubscriptionRef.get(stateRef);
-		if (state.currentOrgId === orgId) return;
+		if (Option.isSome(state.currentOrgId) && state.currentOrgId.value === orgId) return;
 
 		yield* SubscriptionRef.update(stateRef, (s) => ({
 			...s,
-			currentOrgId: orgId,
+			currentOrgId: Option.some(orgId),
 			markedDates: {}, // Clear immediately while syncing
 			isSyncing: true,
 		}));
 		localStorage.setItem("last_org_id", orgId);
 
-		if (state.user && orgId !== "guest") {
+		if (
+			Option.isSome(state.user) &&
+			orgId !== ("guest" as import("../../types/app.types").OrganizationId)
+		) {
 			// Fetch Attendance for new org
 			const attendance = yield* supabase.query<import("../../types/app.types").AttendancePartial[]>(
 				"fetchAttendance",
@@ -79,40 +89,53 @@ export const handleSwitchOrg = (
 	});
 
 export const handleDeleteOrg = (
-	id: string,
+	id: OrganizationId,
 	stateRef: SubscriptionRef.SubscriptionRef<AppState>,
-	supabase: SupabaseService,
+	supabase: SupabaseServiceApi,
 ) =>
 	Effect.gen(function* () {
 		const state = yield* SubscriptionRef.get(stateRef);
-		if (!state.user || state.currentOrgId === "guest") return;
+		if (
+			Option.isNone(state.user) ||
+			Option.isNone(state.currentOrgId) ||
+			state.currentOrgId.value === ("guest" as import("../../types/app.types").OrganizationId)
+		)
+			return;
 
 		yield* supabase.query("deleteOrg", supabase.client.from("organizations").delete().eq("id", id));
 
 		const stateAfterDelete = yield* SubscriptionRef.updateAndGet(stateRef, (s) => {
 			const nextOrgs = s.organizations.filter((o) => o.id !== id);
-			const nextId = s.currentOrgId === id ? (nextOrgs[0]?.id ?? null) : s.currentOrgId;
+			const nextId =
+				Option.isSome(s.currentOrgId) && s.currentOrgId.value === id
+					? Option.fromNullable(nextOrgs[0]?.id ?? null)
+					: s.currentOrgId;
 			return {
 				...s,
 				organizations: nextOrgs,
 				currentOrgId: nextId,
-				...(s.currentOrgId === id && {
-					markedDates: {}, // Clear dates if active org was deleted
-					isSyncing: !!nextId,
-				}),
+				...(Option.isSome(s.currentOrgId) &&
+					s.currentOrgId.value === id && {
+						markedDates: {}, // Clear dates if active org was deleted
+						isSyncing: Option.isSome(nextId),
+					}),
 			};
 		});
 
 		// If we switched orgs due to deletion, fetch new attendance
-		if (state.currentOrgId === id && stateAfterDelete.currentOrgId) {
-			localStorage.setItem("last_org_id", stateAfterDelete.currentOrgId);
+		if (
+			Option.isSome(state.currentOrgId) &&
+			state.currentOrgId.value === id &&
+			Option.isSome(stateAfterDelete.currentOrgId)
+		) {
+			localStorage.setItem("last_org_id", stateAfterDelete.currentOrgId.value);
 
 			const attendance = yield* supabase.query<import("../../types/app.types").AttendancePartial[]>(
 				"fetchAttendance",
 				supabase.client
 					.from("attendance")
 					.select("date_str, daily_hours")
-					.eq("organization_id", stateAfterDelete.currentOrgId),
+					.eq("organization_id", stateAfterDelete.currentOrgId.value),
 			);
 
 			const remoteDates: Record<string, number> = {};
@@ -129,10 +152,10 @@ export const handleDeleteOrg = (
 	});
 
 export const handleUpdateOrg = (
-	id: string,
+	id: OrganizationId,
 	updates: Partial<Organization>,
 	stateRef: SubscriptionRef.SubscriptionRef<AppState>,
-	supabase: SupabaseService,
+	supabase: SupabaseServiceApi,
 ) =>
 	Effect.gen(function* () {
 		const state = yield* SubscriptionRef.get(stateRef);
@@ -143,10 +166,29 @@ export const handleUpdateOrg = (
 			organizations: s.organizations.map((o) => (o.id === id ? { ...o, ...updates } : o)),
 		}));
 
-		if (!state.user || state.currentOrgId === "guest") return;
+		if (
+			Option.isNone(state.user) ||
+			Option.isNone(state.currentOrgId) ||
+			state.currentOrgId.value === ("guest" as import("../../types/app.types").OrganizationId)
+		)
+			return;
+
+		const dbUpdates: Partial<DbOrganization> = {};
+		if (updates.name !== undefined) dbUpdates.name = updates.name;
+		if (updates.hourly_rate !== undefined) dbUpdates.hourly_rate = updates.hourly_rate;
+		if (updates.daily_hours !== undefined) dbUpdates.daily_hours = updates.daily_hours;
+		if (updates.tds_percentage !== undefined) {
+			dbUpdates.tds_percentage = Option.match(updates.tds_percentage, {
+				onNone: () => null,
+				onSome: (n) => n,
+			});
+		}
+		if (updates.color !== undefined) {
+			dbUpdates.color = Option.match(updates.color, { onNone: () => null, onSome: (c) => c });
+		}
 
 		yield* supabase.query(
 			"updateOrg",
-			supabase.client.from("organizations").update(updates).eq("id", id),
+			supabase.client.from("organizations").update(dbUpdates).eq("id", id),
 		);
 	});

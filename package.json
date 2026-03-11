@@ -11,6 +11,8 @@
     "lint": "biome lint src/",
     "format": "biome format --write src/",
     "check": "biome check --write src/",
+    "effect:check": "npx effect-language-service patch",
+    "forbidden:check": "node scripts/forbidden-patterns.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -25,6 +27,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.2",
+    "@effect/language-service": "^0.27.2",
     "@playwright/test": "^1.58.2",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",

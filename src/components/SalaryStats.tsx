@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { Option, Schema } from "effect";
 import { dispatch, useAppState } from "../hooks/useAppRuntime";
 import { calculateMonthlyStats } from "../utils/calculations";
 
@@ -10,17 +10,20 @@ const SalaryStats = () => {
 	const state = useAppState();
 	const { markedDates, viewYear, viewMonth, organizations, currentOrgId, isSyncing } = state;
 
-	const currentOrg = organizations.find((o) => o.id === currentOrgId) ?? null;
+	const currentOrgIdValue = Option.getOrUndefined(currentOrgId);
+	const currentOrg = currentOrgIdValue
+		? (organizations.find((o) => o.id === currentOrgIdValue) ?? null)
+		: null;
 	const hourlyRate = currentOrg?.hourly_rate ?? 0;
 	const dailyHours = currentOrg?.daily_hours ?? 8;
-	const tdsPercentage = currentOrg?.tds_percentage ?? null;
+	const tdsPercentage = currentOrg?.tds_percentage ?? Option.none<number>();
 
 	const stats = calculateMonthlyStats(
 		markedDates,
 		viewYear,
 		viewMonth,
 		hourlyRate,
-		tdsPercentage ?? 0,
+		Option.getOrElse(tdsPercentage, () => 0),
 	);
 
 	return (
@@ -28,9 +31,7 @@ const SalaryStats = () => {
 			<div className="card-header">
 				<div className="main-stat">
 					<span className="label">Monthly Net Salary</span>
-					<div className="value">
-						Rs. {Math.round(stats.netSalary).toLocaleString()}
-					</div>
+					<div className="value">Rs. {Math.round(stats.netSalary).toLocaleString()}</div>
 				</div>
 				<div className="stats-meta">
 					<div className="meta-item">
@@ -55,7 +56,9 @@ const SalaryStats = () => {
 							if (e.target.value === "") {
 								dispatch({ _tag: "SetHourlyRate", value: "" });
 							} else {
-								const decoded = Schema.decodeUnknownOption(HourlyRateSchema)(Number(e.target.value));
+								const decoded = Schema.decodeUnknownOption(HourlyRateSchema)(
+									Number(e.target.value),
+								);
 								if (decoded._tag === "Some") {
 									dispatch({ _tag: "SetHourlyRate", value: decoded.value });
 								} else {
@@ -84,7 +87,9 @@ const SalaryStats = () => {
 							if (e.target.value === "") {
 								dispatch({ _tag: "SetDailyHours", value: "" });
 							} else {
-								const decoded = Schema.decodeUnknownOption(DailyHoursSchema)(Number(e.target.value));
+								const decoded = Schema.decodeUnknownOption(DailyHoursSchema)(
+									Number(e.target.value),
+								);
 								if (decoded._tag === "Some") {
 									dispatch({ _tag: "SetDailyHours", value: decoded.value });
 								} else {
@@ -111,7 +116,7 @@ const SalaryStats = () => {
 						id="tdsPercentage"
 						type="number"
 						step="0.1"
-						value={tdsPercentage ?? ""}
+						value={Option.getOrElse(tdsPercentage, () => "")}
 						onChange={(e) => {
 							if (e.target.value === "") {
 								dispatch({ _tag: "SetTdsPercentage", value: "" });
@@ -120,7 +125,7 @@ const SalaryStats = () => {
 								if (decoded._tag === "Some") {
 									dispatch({ _tag: "SetTdsPercentage", value: decoded.value });
 								} else {
-									e.target.value = tdsPercentage !== null ? tdsPercentage.toString() : "";
+									e.target.value = Option.getOrElse(tdsPercentage, () => "").toString();
 								}
 							}
 						}}

@@ -1,28 +1,19 @@
-import { Effect, type Fiber, Queue, Ref, Schedule, Stream, SubscriptionRef } from "effect";
+import { Effect, type Fiber, Option, Queue, Ref, Schedule, Stream, SubscriptionRef } from "effect";
 import type { Theme } from "../types/app.types";
 import { getCurrentDate } from "../utils/nepali-calendar";
 import type { AppIntent } from "./AppIntent";
 import { type AppState, initialAppState } from "./AppState";
-import { handleResetData, handleToggleDate } from "./handlers/attendanceHandlers";
 import {
 	handleAuthChanged,
 	handleForceLogout,
 	handleLogin,
 	handleSignUp,
 } from "./handlers/authHandlers";
-import {
-	handleAddOrg,
-	handleDeleteOrg,
-	handleSwitchOrg,
-	handleUpdateOrg,
-} from "./handlers/orgHandlers";
-import {
-	handleSetDailyHours,
-	handleSetHourlyRate,
-	handleSetTdsPercentage,
-} from "./handlers/settingsHandlers";
+import { AttendanceService } from "./services/AttendanceService";
 import { AuthService } from "./services/AuthService";
-import { InstallService, type BeforeInstallPromptEvent } from "./services/InstallService";
+import { type BeforeInstallPromptEvent, InstallService } from "./services/InstallService";
+import { OrgService } from "./services/OrgService";
+import { SettingsService } from "./services/SettingsService";
 import { SupabaseService } from "./services/SupabaseService";
 
 let deferredPrompt: BeforeInstallPromptEvent | null = null;
@@ -31,6 +22,9 @@ export const appProgram = Effect.gen(function* () {
 	const supabase = yield* SupabaseService;
 	const auth = yield* AuthService;
 	const installService = yield* InstallService;
+	const orgs = yield* OrgService;
+	const attendance = yield* AttendanceService;
+	const settings = yield* SettingsService;
 	const stateRef = yield* SubscriptionRef.make<AppState>(initialAppState);
 	const intentQueue = yield* Queue.unbounded<AppIntent>();
 	const syncFiberRef = yield* Ref.make<Fiber.RuntimeFiber<void, unknown> | null>(null);
@@ -49,8 +43,10 @@ export const appProgram = Effect.gen(function* () {
 			Effect.sync(() => {
 				localStorage.setItem("theme", state.theme);
 				document.documentElement.setAttribute("data-theme", state.theme);
-				if (state.currentOrgId) localStorage.setItem("currentOrgId", state.currentOrgId);
-				if (!state.user) {
+				if (Option.isSome(state.currentOrgId)) {
+					localStorage.setItem("currentOrgId", state.currentOrgId.value);
+				}
+				if (Option.isNone(state.user)) {
 					localStorage.setItem("markedDates", JSON.stringify(state.markedDates));
 					localStorage.setItem("organizations", JSON.stringify(state.organizations));
 				}
@@ -72,15 +68,18 @@ export const appProgram = Effect.gen(function* () {
 	// 4. Install Prompt Stream
 	yield* installService.installEvents.pipe(
 		Stream.tap((event) =>
-			Effect.sync(() => {
-				deferredPrompt = event;
-				const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-				const isStandalone =
-					window.matchMedia("(display-mode: standalone)").matches ||
-					("standalone" in navigator && (navigator as any).standalone);
+			Effect.gen(function* () {
+				const shouldShow = yield* Effect.sync(() => {
+					deferredPrompt = event;
+					const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+					const nav = navigator as Navigator & { readonly standalone?: boolean };
+					const isStandalone =
+						window.matchMedia("(display-mode: standalone)").matches || nav.standalone === true;
+					return isMobile && !isStandalone;
+				});
 
-				if (isMobile && !isStandalone) {
-					Effect.runSync(Queue.offer(intentQueue, { _tag: "SetInstallPromptVisible", visible: true }));
+				if (shouldShow) {
+					yield* Queue.offer(intentQueue, { _tag: "SetInstallPromptVisible", visible: true });
 				}
 			}),
 		),
@@ -119,67 +118,77 @@ export const appProgram = Effect.gen(function* () {
 					yield* SubscriptionRef.update(stateRef, (s) => ({ ...s, viewMonth: intent.month }));
 					break;
 				case "ToggleDate":
-					yield* handleToggleDate(intent.year, intent.month, intent.day, stateRef, supabase);
+					yield* attendance.toggleDate(intent.year, intent.month, intent.day, stateRef);
 					break;
 				case "AddOrganization":
-					yield* handleAddOrg(intent.name, stateRef, supabase);
+					yield* orgs.addOrganization(intent.name, stateRef);
 					break;
 				case "SwitchOrganization":
-					yield* handleSwitchOrg(intent.orgId, stateRef, supabase);
+					yield* orgs.switchOrganization(intent.orgId, stateRef);
 					break;
 				case "UpdateOrganization":
-					yield* handleUpdateOrg(intent.id, intent.updates, stateRef, supabase);
+					yield* orgs.updateOrganization(intent.id, intent.updates, stateRef);
 					break;
 				case "DeleteOrganization":
-					yield* handleDeleteOrg(intent.id, stateRef, supabase);
+					yield* orgs.deleteOrganization(intent.id, stateRef);
 					break;
 				case "SetHourlyRate":
-					yield* handleSetHourlyRate(intent.value, stateRef, supabase);
+					yield* settings.setHourlyRate(intent.value, stateRef);
 					break;
 				case "SetDailyHours":
-					yield* handleSetDailyHours(intent.value, stateRef, supabase);
+					yield* settings.setDailyHours(intent.value, stateRef);
 					break;
 				case "SetTdsPercentage":
-					yield* handleSetTdsPercentage(intent.value, stateRef, supabase);
+					yield* settings.setTdsPercentage(intent.value, stateRef);
 					break;
 				case "RequestReset":
 					yield* SubscriptionRef.update(stateRef, (s) => ({
 						...s,
-						globalConfirm: {
+						globalConfirm: Option.some({
 							message: "Are you sure you want to clear all data for this organization?",
 							intentOnConfirm: { _tag: "ConfirmAction" } as const,
-						},
+						}),
 					}));
 					break;
 				case "ConfirmAction":
-					yield* SubscriptionRef.update(stateRef, (s) => ({ ...s, globalConfirm: null }));
-					yield* handleResetData(stateRef, supabase);
+					yield* SubscriptionRef.update(stateRef, (s) => ({ ...s, globalConfirm: Option.none() }));
+					yield* attendance.resetData(stateRef);
 					break;
 				case "DismissAlert":
-					yield* SubscriptionRef.update(stateRef, (s) => ({ ...s, globalAlert: null }));
+					yield* SubscriptionRef.update(stateRef, (s) => ({ ...s, globalAlert: Option.none() }));
 					break;
 				case "ShowAlert":
-					yield* SubscriptionRef.update(stateRef, (s) => ({ ...s, globalAlert: intent.message }));
+					yield* SubscriptionRef.update(stateRef, (s) => ({
+						...s,
+						globalAlert: Option.some(intent.message),
+					}));
 					break;
 				case "DismissConfirm":
-					yield* SubscriptionRef.update(stateRef, (s) => ({ ...s, globalConfirm: null }));
+					yield* SubscriptionRef.update(stateRef, (s) => ({ ...s, globalConfirm: Option.none() }));
 					break;
 				case "PromptInstall":
 					if (deferredPrompt) {
 						yield* installService.showPrompt(deferredPrompt);
 						deferredPrompt = null;
-						yield* SubscriptionRef.update(stateRef, (s) => ({ ...s, isInstallPromptVisible: false }));
+						yield* SubscriptionRef.update(stateRef, (s) => ({
+							...s,
+							isInstallPromptVisible: false,
+						}));
 					} else {
 						yield* SubscriptionRef.update(stateRef, (s) => ({
 							...s,
 							isInstallPromptVisible: false,
-							globalAlert:
+							globalAlert: Option.some(
 								"To install: Tap the browser menu (usually three dots or share icon) and select 'Install app' or 'Add to Home Screen'.",
+							),
 						}));
 					}
 					break;
 				case "SetInstallPromptVisible":
-					yield* SubscriptionRef.update(stateRef, (s) => ({ ...s, isInstallPromptVisible: intent.visible }));
+					yield* SubscriptionRef.update(stateRef, (s) => ({
+						...s,
+						isInstallPromptVisible: intent.visible,
+					}));
 					break;
 				case "DismissInstallPrompt":
 					yield* SubscriptionRef.update(stateRef, (s) => ({ ...s, isInstallPromptVisible: false }));

@@ -21,6 +21,8 @@ jobs:
         run: |
           npm run lint && \
           npm run check && \
+          npm run forbidden:check && \
+          npm run effect:check && \
           npm run typecheck && \
           npm run test
       - name: Build Check

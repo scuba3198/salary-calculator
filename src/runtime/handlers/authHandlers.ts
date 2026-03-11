@@ -1,15 +1,23 @@
 import type { User } from "@supabase/supabase-js";
-import { Effect, Fiber, pipe, Ref, SubscriptionRef } from "effect";
-import type { MarkedDatesMap, Organization, Theme } from "../../types/app.types";
-import { type AppState } from "../AppState";
-import type { AuthService } from "../services/AuthService";
-import type { SupabaseService } from "../services/SupabaseService";
+import { Effect, Fiber, Option, pipe, Ref, SubscriptionRef } from "effect";
+import type {
+	DbOrganization,
+	MarkedDatesMap,
+	Organization,
+	OrganizationId,
+	Theme,
+	UserId,
+} from "../../types/app.types";
+import { organizationFromDb } from "../../types/app.types";
+import type { AppState } from "../AppState";
+import type { AuthServiceApi } from "../services/AuthService";
+import type { SupabaseServiceApi } from "../services/SupabaseService";
 
 export const handleAuthChanged = (
 	user: User | null,
 	stateRef: SubscriptionRef.SubscriptionRef<AppState>,
 	syncFiberRef: Ref.Ref<Fiber.RuntimeFiber<void, unknown> | null>,
-	supabase: SupabaseService,
+	supabase: SupabaseServiceApi,
 ) =>
 	Effect.gen(function* () {
 		// 1. Interrupt any running sync fiber
@@ -22,34 +30,74 @@ export const handleAuthChanged = (
 		if (!user) {
 			// Guest Mode
 			yield* SubscriptionRef.update(stateRef, (s) => {
-				const savedOrgsRaw = JSON.parse(localStorage.getItem("organizations") || "[]");
+				const savedOrgsRaw: unknown = JSON.parse(localStorage.getItem("organizations") || "[]");
+
+				const isOption = (u: unknown): u is Option.Option<unknown> => {
+					if (typeof u !== "object" || u === null) return false;
+					if (!("_tag" in u)) return false;
+					const tag = (u as { readonly _tag?: unknown })._tag;
+					return tag === "Some" || tag === "None";
+				};
+
 				const savedOrgs = Array.isArray(savedOrgsRaw)
-					? savedOrgsRaw.map((org: Organization) => ({
-						...org,
-						hourly_rate: Math.max(org.hourly_rate || 0, org.id === "guest" ? 500 : 0),
-					}))
+					? savedOrgsRaw.map((org): Organization => {
+							const row = org as Record<string, unknown>;
+							const id = (row["id"] ?? "guest") as OrganizationId;
+
+							const tdsRaw = row["tds_percentage"];
+							const colorRaw = row["color"];
+							const createdAtRaw = row["created_at"];
+							const updatedAtRaw = row["updated_at"];
+
+							return {
+								id,
+								name: String(row["name"] ?? "Workspace"),
+								hourly_rate: Math.max(
+									Number(row["hourly_rate"] ?? 0),
+									id === ("guest" as OrganizationId) ? 500 : 0,
+								),
+								daily_hours: Number(row["daily_hours"] ?? 8),
+								tds_percentage: isOption(tdsRaw)
+									? (tdsRaw as Option.Option<number>)
+									: Option.fromNullable(typeof tdsRaw === "number" ? tdsRaw : null),
+								user_id: (row["user_id"] ?? "") as UserId,
+								color: isOption(colorRaw)
+									? (colorRaw as Option.Option<string>)
+									: Option.fromNullable(typeof colorRaw === "string" ? colorRaw : null),
+								created_at: isOption(createdAtRaw)
+									? (createdAtRaw as Option.Option<string>)
+									: Option.fromNullable(typeof createdAtRaw === "string" ? createdAtRaw : null),
+								updated_at: isOption(updatedAtRaw)
+									? (updatedAtRaw as Option.Option<string>)
+									: Option.fromNullable(typeof updatedAtRaw === "string" ? updatedAtRaw : null),
+							};
+						})
 					: [];
 
 				return {
 					...s,
-					user: null,
+					user: Option.none(),
 					loadingAuth: false,
-					organizations: savedOrgs.length > 0
-						? savedOrgs
-						: [
-							{
-								id: "guest",
-								name: "Guest Workspace",
-								hourly_rate: 500,
-								daily_hours: 8,
-								tds_percentage: 10,
-								user_id: "",
-								color: null,
-								created_at: new Date().toISOString(),
-								updated_at: null,
-							} as Organization,
-						],
-					currentOrgId: localStorage.getItem("currentOrgId") || "guest",
+					organizations:
+						savedOrgs.length > 0
+							? savedOrgs
+							: [
+									{
+										id: "guest" as OrganizationId,
+										name: "Guest Workspace",
+										hourly_rate: 500,
+										daily_hours: 8,
+										tds_percentage: Option.some(10),
+										user_id: "" as UserId,
+										color: Option.none(),
+										created_at: Option.some(new Date().toISOString()),
+										updated_at: Option.none(),
+									} as Organization,
+								],
+					currentOrgId: Option.orElse(
+						Option.fromNullable(localStorage.getItem("currentOrgId") as OrganizationId | null),
+						() => Option.some("guest" as OrganizationId),
+					),
 					markedDates: {},
 				};
 			});
@@ -57,7 +105,7 @@ export const handleAuthChanged = (
 			// Authenticated Mode
 			yield* SubscriptionRef.update(stateRef, (s) => ({
 				...s,
-				user,
+				user: Option.some(user),
 				isSyncing: true,
 				loadingAuth: true,
 			}));
@@ -82,11 +130,11 @@ export const handleAuthChanged = (
 const loadUserData = (
 	userId: string,
 	stateRef: SubscriptionRef.SubscriptionRef<AppState>,
-	supabase: SupabaseService,
+	supabase: SupabaseServiceApi,
 ) =>
 	Effect.gen(function* () {
 		// Fetch Orgs
-		const orgs = yield* supabase.query<Organization[]>(
+		const orgRows = yield* supabase.query<DbOrganization[]>(
 			"fetchOrgs",
 			supabase.client
 				.from("organizations")
@@ -94,29 +142,33 @@ const loadUserData = (
 				.eq("user_id", userId)
 				.order("created_at", { ascending: true }),
 		);
+		const orgs = orgRows.map(organizationFromDb);
 
 		const savedId = localStorage.getItem("last_org_id");
-		const activeId = orgs.find((o) => o.id === savedId)?.id ?? orgs[0]?.id ?? null;
+		const activeId =
+			orgs.find((o) => o.id === (savedId as OrganizationId | null))?.id ?? orgs[0]?.id ?? null;
+		const activeIdOption = Option.fromNullable(activeId);
 
-		const { finalOrgs, finalActiveId } = yield* (orgs.length === 0
+		const { finalOrgs, finalActiveId } = yield* orgs.length === 0
 			? Effect.gen(function* () {
-				const newOrg = yield* supabase.query<Organization>(
-					"createInitialOrg",
-					supabase.client
-						.from("organizations")
-						.insert({
-							user_id: userId,
-							name: "Primary Job",
-							hourly_rate: 0,
-							daily_hours: 8,
-							tds_percentage: null,
-						})
-						.select()
-						.single(),
-				);
-				return { finalOrgs: [newOrg], finalActiveId: newOrg.id as string | null };
-			})
-			: Effect.succeed({ finalOrgs: orgs, finalActiveId: activeId }));
+					const newOrgRow = yield* supabase.query<DbOrganization>(
+						"createInitialOrg",
+						supabase.client
+							.from("organizations")
+							.insert({
+								user_id: userId,
+								name: "Primary Job",
+								hourly_rate: 0,
+								daily_hours: 8,
+								tds_percentage: null,
+							})
+							.select()
+							.single(),
+					);
+					const newOrg = organizationFromDb(newOrgRow);
+					return { finalOrgs: [newOrg], finalActiveId: Option.some(newOrg.id) };
+				})
+			: Effect.succeed({ finalOrgs: orgs, finalActiveId: activeIdOption });
 
 		yield* SubscriptionRef.update(stateRef, (s) => ({
 			...s,
@@ -124,8 +176,8 @@ const loadUserData = (
 			currentOrgId: finalActiveId,
 		}));
 
-		if (finalActiveId) {
-			localStorage.setItem("last_org_id", finalActiveId);
+		if (Option.isSome(finalActiveId)) {
+			localStorage.setItem("last_org_id", finalActiveId.value);
 
 			// Fetch Attendance
 			const attendance = yield* supabase.query<import("../../types/app.types").AttendancePartial[]>(
@@ -133,7 +185,7 @@ const loadUserData = (
 				supabase.client
 					.from("attendance")
 					.select("date_str, daily_hours")
-					.eq("organization_id", finalActiveId),
+					.eq("organization_id", finalActiveId.value),
 			);
 
 			const remoteDates = attendance.reduce<MarkedDatesMap>((acc, row) => {
@@ -155,7 +207,12 @@ const loadUserData = (
 				"fetchSettings",
 				supabase.client.from("user_settings").select("theme").eq("user_id", userId).single(),
 			)
-			.pipe(Effect.catchAll(() => Effect.succeed({ theme: null })));
+			.pipe(
+				Effect.catchTags({
+					SupabaseNetworkError: () => Effect.succeed({ theme: null }),
+					SupabaseQueryError: () => Effect.succeed({ theme: null }),
+				}),
+			);
 
 		if (settings?.theme) {
 			yield* SubscriptionRef.update(stateRef, (s) => ({
@@ -165,24 +222,24 @@ const loadUserData = (
 		}
 	});
 
-export const handleForceLogout = (authService: AuthService) =>
+export const handleForceLogout = (authService: AuthServiceApi) =>
 	Effect.gen(function* () {
-		yield* authService.signOut;
+		yield* authService.signOut();
 	});
 
 export const handleLogin = (
 	email: string,
 	password: string,
-	auth: AuthService,
+	auth: AuthServiceApi,
 	stateRef: SubscriptionRef.SubscriptionRef<AppState>,
 ) =>
 	Effect.gen(function* () {
 		yield* SubscriptionRef.update(stateRef, (s) => ({ ...s, loadingAuth: true }));
 		yield* auth.signIn(email, password).pipe(
-			Effect.catchAll((err) =>
+			Effect.catchTag("AuthSignInError", (err) =>
 				SubscriptionRef.update(stateRef, (s) => ({
 					...s,
-					globalAlert: err.message,
+					globalAlert: Option.some(err.message),
 					loadingAuth: false,
 				})),
 			),
@@ -193,16 +250,16 @@ export const handleSignUp = (
 	email: string,
 	password: string,
 	fullName: string,
-	auth: AuthService,
+	auth: AuthServiceApi,
 	stateRef: SubscriptionRef.SubscriptionRef<AppState>,
 ) =>
 	Effect.gen(function* () {
 		yield* SubscriptionRef.update(stateRef, (s) => ({ ...s, loadingAuth: true }));
 		yield* auth.signUp(email, password, fullName).pipe(
-			Effect.catchAll((err) =>
+			Effect.catchTag("AuthSignUpError", (err) =>
 				SubscriptionRef.update(stateRef, (s) => ({
 					...s,
-					globalAlert: err.message,
+					globalAlert: Option.some(err.message),
 					loadingAuth: false,
 				})),
 			),

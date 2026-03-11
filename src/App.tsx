@@ -1,3 +1,4 @@
+import { Option } from "effect";
 import { AlertTriangle, Briefcase, LogIn, LogOut, Moon, Sun, X } from "lucide-react";
 import { useState } from "react";
 import Auth from "./components/Auth";
@@ -9,9 +10,18 @@ import { dispatch, useAppState } from "./hooks/useAppRuntime";
 
 function App() {
 	const state = useAppState();
-	const { user, loadingAuth, theme, organizations, currentOrgId, globalAlert, globalConfirm } = state;
+	const { user, loadingAuth, theme, organizations, currentOrgId, globalAlert, globalConfirm } =
+		state;
 
-	const currentOrg = organizations.find((o) => o.id === currentOrgId) ?? null;
+	const currentOrgIdValue = Option.getOrUndefined(currentOrgId);
+	const currentOrg = currentOrgIdValue
+		? (organizations.find((o) => o.id === currentOrgIdValue) ?? null)
+		: null;
+
+	const displayName = Option.match(user, {
+		onNone: () => "Guest",
+		onSome: (u) => (u.user_metadata as { full_name?: string } | undefined)?.full_name || "User",
+	});
 
 	const [showAuth, setShowAuth] = useState(false);
 	const [showOrgManager, setShowOrgManager] = useState(false);
@@ -19,12 +29,20 @@ function App() {
 	return (
 		<>
 			{loadingAuth ? (
-				<div className="loading-screen" style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+				<div
+					className="loading-screen"
+					style={{
+						height: "100vh",
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+					}}
+				>
 					<div className="loading-spinner">Initializing Workspace...</div>
 				</div>
 			) : (
 				<>
-					{!user && (
+					{Option.isNone(user) && (
 						<div
 							style={{
 								background: "var(--text-main)",
@@ -75,8 +93,7 @@ function App() {
 												letterSpacing: "0.02em",
 											}}
 										>
-											{(user?.user_metadata as { full_name?: string })?.full_name ||
-												(user ? "User" : "Guest")}
+											{displayName}
 										</span>
 										{currentOrg && (
 											<button
@@ -98,12 +115,14 @@ function App() {
 												}}
 											>
 												<Briefcase size={14} /> {currentOrg.name}
-												{!user && <span style={{ opacity: 1, fontWeight: "bold" }}>(Draft)</span>}
+												{Option.isNone(user) && (
+													<span style={{ opacity: 1, fontWeight: "bold" }}>(Draft)</span>
+												)}
 											</button>
 										)}
 									</div>
 
-									{user ? (
+									{Option.isSome(user) ? (
 										<button
 											type="button"
 											onClick={() => dispatch({ _tag: "ForceLogout" })}
@@ -151,7 +170,7 @@ function App() {
 							Design / Mumukshu D.C
 						</footer>
 
-						{showAuth && !user && (
+						{showAuth && Option.isNone(user) && (
 							<div
 								onClick={() => setShowAuth(false)}
 								style={{
@@ -236,7 +255,7 @@ function App() {
 						)}
 
 						{/* Global Alert Modal */}
-						{globalAlert && (
+						{Option.isSome(globalAlert) && (
 							<div
 								onClick={() => dispatch({ _tag: "DismissAlert" })}
 								style={{
@@ -269,10 +288,14 @@ function App() {
 										textAlign: "center",
 									}}
 								>
-									<div style={{ display: "flex", justifyContent: "center", color: "var(--accent)" }}>
+									<div
+										style={{ display: "flex", justifyContent: "center", color: "var(--accent)" }}
+									>
 										<AlertTriangle size={48} strokeWidth={1.5} />
 									</div>
-									<p style={{ fontSize: "1.1rem", lineHeight: 1.5, margin: 0 }}>{globalAlert}</p>
+									<p style={{ fontSize: "1.1rem", lineHeight: 1.5, margin: 0 }}>
+										{globalAlert.value}
+									</p>
 									<button
 										type="button"
 										onClick={() => dispatch({ _tag: "DismissAlert" })}
@@ -286,7 +309,7 @@ function App() {
 						)}
 
 						{/* Global Confirm Modal */}
-						{globalConfirm && (
+						{Option.isSome(globalConfirm) && (
 							<div
 								onClick={() => dispatch({ _tag: "DismissConfirm" })}
 								style={{
@@ -321,7 +344,7 @@ function App() {
 								>
 									<h3 style={{ fontSize: "1.5rem", margin: 0 }}>Are you sure?</h3>
 									<p style={{ fontSize: "1.1rem", lineHeight: 1.5, margin: 0, opacity: 0.8 }}>
-										{globalConfirm.message}
+										{globalConfirm.value.message}
 									</p>
 									<div style={{ display: "flex", gap: "1rem" }}>
 										<button
@@ -334,7 +357,7 @@ function App() {
 										</button>
 										<button
 											type="button"
-											onClick={() => dispatch(globalConfirm.intentOnConfirm)}
+											onClick={() => dispatch(globalConfirm.value.intentOnConfirm)}
 											className="primary-btn"
 											style={{ flex: 1 }}
 										>

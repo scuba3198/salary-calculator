@@ -2,6 +2,7 @@ import { Effect, Queue, Stream } from "effect";
 import { useCallback, useSyncExternalStore } from "react";
 import type { AppIntent } from "../runtime/AppIntent";
 import { type AppState, initialAppState } from "../runtime/AppState";
+import { runFork } from "../runtime/runtime";
 
 // Module-level state for external store
 let snapshot: AppState = initialAppState;
@@ -18,7 +19,7 @@ export function __bridgeInit(
 ) {
 	intentQueue = queue;
 	// Drain the state stream
-	Effect.runPromise(
+	runFork(
 		stateStream.pipe(
 			Stream.tap((s) =>
 				Effect.sync(() => {
@@ -55,6 +56,6 @@ export function useAppState(): AppState {
  */
 export function dispatch(intent: AppIntent): void {
 	if (intentQueue) {
-		Effect.runSync(Queue.offer(intentQueue, intent));
+		runFork(Queue.offer(intentQueue, intent));
 	}
 }

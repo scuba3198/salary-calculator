@@ -1,3 +1,4 @@
+import { Option } from "effect";
 import { Loader2, LogIn, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { dispatch, useAppState } from "../hooks/useAppRuntime";
@@ -5,6 +6,7 @@ import { dispatch, useAppState } from "../hooks/useAppRuntime";
 export default function Auth() {
 	const state = useAppState();
 	const { loadingAuth, globalAlert } = state;
+	const globalAlertMessage = Option.getOrUndefined(globalAlert);
 
 	const [isSignUp, setIsSignUp] = useState<boolean>(false);
 	const [email, setEmail] = useState<string>("");
@@ -194,7 +196,7 @@ export default function Auth() {
 					</div>
 				)}
 
-				{(localError || globalAlert) && (
+				{(localError || globalAlertMessage) && (
 					<div
 						style={{
 							padding: "0.75rem",
@@ -204,7 +206,7 @@ export default function Auth() {
 							fontSize: "0.875rem",
 						}}
 					>
-						{localError || globalAlert}
+						{localError || globalAlertMessage}
 					</div>
 				)}
 

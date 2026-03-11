@@ -1,11 +1,44 @@
 import type { User } from "@supabase/supabase-js";
+import { Option, Schema } from "effect";
 import type { Tables } from "./database.types";
 
 // Database row types (aliases for convenience)
-export type Organization = Tables<"organizations">;
+export type DbOrganization = Tables<"organizations">;
 export type AttendanceRow = Tables<"attendance">;
 export type AttendancePartial = Pick<AttendanceRow, "date_str" | "daily_hours">;
 export type UserSettings = Tables<"user_settings">;
+
+export const UserId = Schema.String.pipe(Schema.brand("@App/UserId"));
+export type UserId = Schema.Schema.Type<typeof UserId>;
+
+export const OrganizationId = Schema.String.pipe(Schema.brand("@App/OrganizationId"));
+export type OrganizationId = Schema.Schema.Type<typeof OrganizationId>;
+
+export type MarkedDateKey = `${number}-${number}-${number}`;
+
+export interface Organization {
+	readonly id: OrganizationId;
+	readonly name: string;
+	readonly hourly_rate: number;
+	readonly daily_hours: number;
+	readonly tds_percentage: Option.Option<number>;
+	readonly user_id: UserId;
+	readonly color: Option.Option<string>;
+	readonly created_at: Option.Option<string>;
+	readonly updated_at: Option.Option<string>;
+}
+
+export const organizationFromDb = (row: DbOrganization): Organization => ({
+	id: row.id as OrganizationId,
+	name: row.name,
+	hourly_rate: row.hourly_rate ?? 0,
+	daily_hours: row.daily_hours ?? 8,
+	tds_percentage: Option.fromNullable(row.tds_percentage),
+	user_id: row.user_id as UserId,
+	color: Option.fromNullable(row.color),
+	created_at: Option.fromNullable(row.created_at),
+	updated_at: Option.fromNullable(row.updated_at),
+});
 
 // Nepali date
 export interface NepaliDate {
@@ -49,7 +82,7 @@ export interface AppContextValue {
 	setHourlyRate: (val: number | "") => void;
 	dailyHours: number;
 	setDailyHours: (val: number) => void;
-	tdsPercentage: number | null;
+	tdsPercentage: Option.Option<number>;
 	setTdsPercentage: (val: number | "") => void;
 
 	markedDates: MarkedDatesMap;
@@ -58,12 +91,12 @@ export interface AppContextValue {
 	resetData: () => void;
 	forceLogout: () => void;
 
-	globalAlert: string | null;
-	setGlobalAlert: (msg: string | null) => void;
-	globalConfirm: { message: string; onConfirm: () => void } | null;
-	setGlobalConfirm: (config: { message: string; onConfirm: () => void } | null) => void;
+	globalAlert: Option.Option<string>;
+	setGlobalAlert: (msg: Option.Option<string>) => void;
+	globalConfirm: Option.Option<{ message: string; onConfirm: () => void }>;
+	setGlobalConfirm: (config: Option.Option<{ message: string; onConfirm: () => void }>) => void;
 
-	user: User | null;
+	user: Option.Option<User>;
 	loadingAuth: boolean;
 	isSyncing: boolean;
 	theme: Theme;
@@ -72,9 +105,9 @@ export interface AppContextValue {
 	currentDate: NepaliDate;
 
 	organizations: Organization[];
-	currentOrg: Organization | null;
-	switchOrganization: (orgId: string) => void;
+	currentOrg: Option.Option<Organization>;
+	switchOrganization: (orgId: OrganizationId) => void;
 	addOrganization: (name: string) => void;
-	updateOrganization: (id: string, updates: Partial<Organization>) => void;
-	deleteOrganization: (id: string) => void;
+	updateOrganization: (id: OrganizationId, updates: Partial<DbOrganization>) => void;
+	deleteOrganization: (id: OrganizationId) => void;
 }

@@ -1,6 +1,8 @@
+import { Option } from "effect";
 import { Plus, Settings2, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { dispatch, useAppState } from "../hooks/useAppRuntime";
+import type { OrganizationId } from "../types/app.types";
 
 interface Props {
 	onClose: () => void;
@@ -9,9 +11,10 @@ interface Props {
 export default function OrganizationManager({ onClose }: Props) {
 	const state = useAppState();
 	const { organizations, currentOrgId, user, isSyncing } = state;
+	const currentOrgIdValue = Option.getOrUndefined(currentOrgId);
 
 	const [newOrgName, setNewOrgName] = useState("");
-	const [editingId, setEditingId] = useState<string | null>(null);
+	const [editingId, setEditingId] = useState<OrganizationId | null>(null);
 	const [editName, setEditName] = useState("");
 
 	const handleAdd = (e: React.FormEvent) => {
@@ -21,7 +24,7 @@ export default function OrganizationManager({ onClose }: Props) {
 		setNewOrgName("");
 	};
 
-	const handleUpdate = (id: string) => {
+	const handleUpdate = (id: OrganizationId) => {
 		if (!editName.trim()) return;
 		dispatch({ _tag: "UpdateOrganization", id, updates: { name: editName.trim() } });
 		setEditingId(null);
@@ -54,8 +57,11 @@ export default function OrganizationManager({ onClose }: Props) {
 								alignItems: "center",
 								justifyContent: "space-between",
 								padding: "1rem",
-								background: org.id === currentOrgId ? "var(--primary-light)" : "var(--surface)",
-								border: `1px solid ${org.id === currentOrgId ? "var(--primary)" : "var(--border-light)"}`,
+								background:
+									org.id === currentOrgIdValue ? "var(--primary-light)" : "var(--surface)",
+								border: `1px solid ${
+									org.id === currentOrgIdValue ? "var(--primary)" : "var(--border-light)"
+								}`,
 								transition: "all 0.2s ease",
 							}}
 						>
@@ -98,7 +104,7 @@ export default function OrganizationManager({ onClose }: Props) {
 										}}
 									>
 										<span style={{ fontWeight: 500 }}>{org.name}</span>
-										{org.id === currentOrgId && (
+										{org.id === currentOrgIdValue && (
 											<span
 												style={{
 													fontSize: "0.6rem",
@@ -144,7 +150,7 @@ export default function OrganizationManager({ onClose }: Props) {
 				</div>
 
 				{/* Add New Org */}
-				{user && (
+				{Option.isSome(user) && (
 					<form
 						onSubmit={handleAdd}
 						style={{
@@ -175,7 +181,7 @@ export default function OrganizationManager({ onClose }: Props) {
 					</form>
 				)}
 
-				{!user && (
+				{Option.isNone(user) && (
 					<p
 						style={{
 							fontSize: "0.8rem",

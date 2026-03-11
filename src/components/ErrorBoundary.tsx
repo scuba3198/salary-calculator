@@ -1,6 +1,7 @@
-import { Effect } from "effect";
 import { AlertTriangle, RefreshCcw } from "lucide-react";
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { runFork } from "../runtime/runtime";
+import { AppLogger } from "../runtime/services/AppLogger";
 
 interface Props {
 	children: ReactNode;
@@ -30,8 +31,7 @@ export default class ErrorBoundary extends Component<Props, State> {
 		};
 
 		// Use Effect for structured logging even in the boundary
-		// We use runSync because we are in a synchronous React lifecycle
-		Effect.runSync(Effect.logError(logPayload));
+		runFork(AppLogger.boundaryError(logPayload));
 	}
 
 	private handleReset = () => {

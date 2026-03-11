@@ -25,9 +25,9 @@ export const calculateMonthlyStats = (
 
 			return isCurrentMonth
 				? {
-					count: acc.count + 1,
-					totalHours: acc.totalHours + (Number(dayHours) || 0),
-				}
+						count: acc.count + 1,
+						totalHours: acc.totalHours + (Number(dayHours) || 0),
+					}
 				: acc;
 		},
 		{ count: 0, totalHours: 0 },
