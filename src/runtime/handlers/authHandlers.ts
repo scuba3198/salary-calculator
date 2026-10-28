@@ -11,8 +11,8 @@ import type {
 import { organizationFromDb } from "../../types/app.types";
 import type { AppState } from "../AppState";
 import type { AuthServiceApi } from "../services/AuthService";
-import type { SupabaseServiceApi } from "../services/SupabaseService";
 import { LocalStorageService } from "../services/LocalStorageService";
+import type { SupabaseServiceApi } from "../services/SupabaseService";
 
 export const handleAuthChanged = (
 	user: User | null,
@@ -32,10 +32,16 @@ export const handleAuthChanged = (
 			// Guest Mode - load guest state from LocalStorageService
 			const storage = yield* LocalStorageService;
 			const savedOrgs = yield* storage.loadOrganizations.pipe(
-				Effect.catchAll(() => Effect.succeed<Organization[]>([])),
+				Effect.catchTags({
+					LocalStorageDecodeError: () => Effect.succeed<Organization[]>([]),
+					LocalStorageUnavailableError: () => Effect.succeed<Organization[]>([]),
+				}),
 			);
 			const storedCurrentOrgId = yield* storage.loadCurrentOrgId.pipe(
-				Effect.catchAll(() => Effect.succeed(Option.none<OrganizationId>())),
+				Effect.catchTags({
+					LocalStorageDecodeError: () => Effect.succeed(Option.none<OrganizationId>()),
+					LocalStorageUnavailableError: () => Effect.succeed(Option.none<OrganizationId>()),
+				}),
 			);
 
 			yield* SubscriptionRef.update(stateRef, (s) => {
@@ -116,7 +122,10 @@ const loadUserData = (
 
 		const storage = yield* LocalStorageService;
 		const savedIdOption = yield* storage.loadLastOrgId.pipe(
-			Effect.catchAll(() => Effect.succeed(Option.none<OrganizationId>())),
+			Effect.catchTags({
+				LocalStorageDecodeError: () => Effect.succeed(Option.none<OrganizationId>()),
+				LocalStorageUnavailableError: () => Effect.succeed(Option.none<OrganizationId>()),
+			}),
 		);
 		const savedId = Option.getOrUndefined(savedIdOption);
 		const activeId =
@@ -151,7 +160,12 @@ const loadUserData = (
 		}));
 
 		if (Option.isSome(finalActiveId)) {
-			yield* storage.saveLastOrgId(finalActiveId.value).pipe(Effect.catchAll(() => Effect.void));
+			yield* storage.saveLastOrgId(finalActiveId.value).pipe(
+				Effect.catchTags({
+					LocalStorageDecodeError: () => Effect.void,
+					LocalStorageUnavailableError: () => Effect.void,
+				}),
+			);
 
 			// Fetch Attendance
 			const attendance = yield* supabase.query<import("../../types/app.types").AttendancePartial[]>(
@@ -196,10 +210,7 @@ const loadUserData = (
 		}
 	});
 
-export const handleForceLogout = (authService: AuthServiceApi) =>
-	Effect.gen(function* () {
-		yield* authService.signOut();
-	});
+export const handleForceLogout = (authService: AuthServiceApi) => authService.signOut();
 
 export const handleLogin = (
 	email: string,

@@ -10,7 +10,7 @@ export interface InstallServiceApi {
 	readonly showPrompt: (event: BeforeInstallPromptEvent) => Effect.Effect<void, never, never>;
 }
 
-export class InstallService extends Effect.Service<InstallServiceApi>()("InstallService", {
+export class InstallService extends Effect.Service<InstallService>()("InstallService", {
 	accessors: true,
 	effect: Effect.succeed({
 		installEvents: Stream.async<BeforeInstallPromptEvent, never, never>((emit) => {

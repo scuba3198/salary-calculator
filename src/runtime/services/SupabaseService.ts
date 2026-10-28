@@ -15,8 +15,7 @@ export interface SupabaseServiceApi {
 	readonly client: ReturnType<typeof createClient<Database>>;
 }
 
-export class SupabaseService extends EffectMod.Service<SupabaseServiceApi>()("SupabaseService", {
-	accessors: true,
+export class SupabaseService extends EffectMod.Service<SupabaseService>()("SupabaseService", {
 	dependencies: [AppConfigService.Default],
 	effect: EffectMod.gen(function* () {
 		const config = yield* AppConfigService;

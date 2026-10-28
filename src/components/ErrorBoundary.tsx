@@ -25,8 +25,8 @@ export default class ErrorBoundary extends Component<Props, State> {
 	public override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
 		const logPayload = {
 			error: error.message,
-			stack: error.stack,
-			componentStack: errorInfo.componentStack,
+			stack: error.stack ?? "",
+			componentStack: errorInfo.componentStack ?? "",
 			timestamp: new Date().toISOString(),
 		};
 
