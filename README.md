@@ -123,6 +123,8 @@ npm ci
 
 ### 2. Configure Supabase (required)
 
+For a fresh database, follow [Database setup](supabase/README.md) to create the tables, triggers, explicit grants, and RLS policies.
+
 Create `.env.local` in the repo root:
 
 ```bash
