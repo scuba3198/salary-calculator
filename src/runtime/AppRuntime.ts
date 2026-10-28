@@ -9,10 +9,10 @@ import {
 	handleLogin,
 	handleSignUp,
 } from "./handlers/authHandlers";
-import { LocalStorageService } from "./services/LocalStorageService";
 import { AttendanceService } from "./services/AttendanceService";
 import { AuthService } from "./services/AuthService";
 import { type BeforeInstallPromptEvent, InstallService } from "./services/InstallService";
+import { LocalStorageService } from "./services/LocalStorageService";
 import { OrgService } from "./services/OrgService";
 import { SettingsService } from "./services/SettingsService";
 import { SupabaseService } from "./services/SupabaseService";
@@ -44,7 +44,10 @@ export const appProgram = Effect.gen(function* () {
 		Stream.tap((state) =>
 			Effect.gen(function* () {
 				yield* localStorageService.persistFromState(state).pipe(
-					Effect.catchAll(() => Effect.void),
+					Effect.catchTags({
+						LocalStorageDecodeError: () => Effect.void,
+						LocalStorageUnavailableError: () => Effect.void,
+					}),
 				);
 				yield* Effect.sync(() => {
 					document.documentElement.setAttribute("data-theme", state.theme);

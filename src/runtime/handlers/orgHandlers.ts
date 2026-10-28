@@ -2,8 +2,8 @@ import { Effect, Option, SubscriptionRef } from "effect";
 import type { DbOrganization, Organization, OrganizationId } from "../../types/app.types";
 import { organizationFromDb } from "../../types/app.types";
 import type { AppState } from "../AppState";
-import type { SupabaseServiceApi } from "../services/SupabaseService";
 import { LocalStorageService } from "../services/LocalStorageService";
+import type { SupabaseServiceApi } from "../services/SupabaseService";
 
 export const handleAddOrg = (
 	name: string,
@@ -42,7 +42,12 @@ export const handleAddOrg = (
 			markedDates: {}, // Force clear for new workspace
 		}));
 		const storage = yield* LocalStorageService;
-		yield* storage.saveLastOrgId(newOrg.id).pipe(Effect.catchAll(() => Effect.void));
+		yield* storage.saveLastOrgId(newOrg.id).pipe(
+			Effect.catchTags({
+				LocalStorageDecodeError: () => Effect.void,
+				LocalStorageUnavailableError: () => Effect.void,
+			}),
+		);
 	});
 
 export const handleSwitchOrg = (
@@ -61,7 +66,12 @@ export const handleSwitchOrg = (
 			isSyncing: true,
 		}));
 		const storage = yield* LocalStorageService;
-		yield* storage.saveLastOrgId(orgId).pipe(Effect.catchAll(() => Effect.void));
+		yield* storage.saveLastOrgId(orgId).pipe(
+			Effect.catchTags({
+				LocalStorageDecodeError: () => Effect.void,
+				LocalStorageUnavailableError: () => Effect.void,
+			}),
+		);
 
 		if (
 			Option.isSome(state.user) &&
@@ -132,9 +142,12 @@ export const handleDeleteOrg = (
 			Option.isSome(stateAfterDelete.currentOrgId)
 		) {
 			const storage = yield* LocalStorageService;
-			yield* storage
-				.saveLastOrgId(stateAfterDelete.currentOrgId.value)
-				.pipe(Effect.catchAll(() => Effect.void));
+			yield* storage.saveLastOrgId(stateAfterDelete.currentOrgId.value).pipe(
+				Effect.catchTags({
+					LocalStorageDecodeError: () => Effect.void,
+					LocalStorageUnavailableError: () => Effect.void,
+				}),
+			);
 
 			const attendance = yield* supabase.query<import("../../types/app.types").AttendancePartial[]>(
 				"fetchAttendance",

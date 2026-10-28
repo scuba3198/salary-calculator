@@ -1,12 +1,12 @@
 import { Effect, Option, Schema } from "effect";
 import type { MarkedDatesMap, Organization, OrganizationId, Theme } from "../../types/app.types";
-import { BrowserStoragePort, type StoragePort } from "../storagePort";
+import type { AppState } from "../AppState";
 import {
 	LocalStorageDecodeError,
-	LocalStorageUnavailableError,
 	type LocalStorageError,
+	LocalStorageUnavailableError,
 } from "../storageErrors";
-import type { AppState } from "../AppState";
+import { BrowserStoragePort, type StoragePort } from "../storagePort";
 
 const THEME_KEY = "theme";
 const CURRENT_ORG_ID_KEY = "currentOrgId";
@@ -14,10 +14,7 @@ const ORGANIZATIONS_KEY = "organizations";
 const MARKED_DATES_KEY = "markedDates";
 const LAST_ORG_ID_KEY = "last_org_id";
 
-const ThemeSchema = Schema.Union(
-	Schema.Literal("dark"),
-	Schema.Literal("light"),
-);
+const ThemeSchema = Schema.Union(Schema.Literal("dark"), Schema.Literal("light"));
 
 const MarkedDatesSchema = Schema.Record({ key: Schema.String, value: Schema.Number });
 
@@ -67,36 +64,27 @@ const parseJson = <A>(
 	raw: string | null,
 	schema: Schema.Schema<A>,
 ): Effect.Effect<A, LocalStorageError> =>
-	Effect.gen(function* () {
-		if (raw === null || raw === "") {
-			return yield* Schema.decodeUnknown(schema)({});
-		}
-
-		let parsed: unknown;
-		try {
-			parsed = JSON.parse(raw);
-		} catch (e) {
-			return yield* Effect.fail(
+	Effect.try({
+		try: (): unknown => (raw === null || raw === "" ? {} : JSON.parse(raw)),
+		catch: (error) =>
+			new LocalStorageDecodeError({
+				key,
+				message:
+					error instanceof Error
+						? error.message
+						: `Failed to parse JSON from localStorage for key ${key}`,
+			}),
+	}).pipe(
+		Effect.flatMap((parsed) => Schema.decodeUnknown(schema)(parsed)),
+		Effect.catchTag("ParseError", (error) =>
+			Effect.fail(
 				new LocalStorageDecodeError({
 					key,
-					message:
-						e instanceof Error
-							? e.message
-							: "Failed to parse JSON from localStorage for key " + key,
+					message: error.message,
 				}),
-			);
-		}
-
-		return yield* Schema.decodeUnknown(schema)(parsed).pipe(
-			Effect.mapError(
-				(err) =>
-					new LocalStorageDecodeError({
-						key,
-						message: String(err.message),
-					}),
 			),
-		);
-	});
+		),
+	);
 
 const encodeJson = <A>(
 	key: string,
@@ -104,12 +92,13 @@ const encodeJson = <A>(
 	schema: Schema.Schema<A>,
 ): Effect.Effect<string, LocalStorageError> =>
 	Schema.encode(schema)(value).pipe(
-		Effect.mapError(
-			(err) =>
+		Effect.catchTag("ParseError", (err) =>
+			Effect.fail(
 				new LocalStorageDecodeError({
 					key,
 					message: String(err.message),
 				}),
+			),
 		),
 		Effect.map((encoded) => JSON.stringify(encoded)),
 	);
@@ -123,20 +112,22 @@ export const LocalStorageService = Effect.Service<LocalStorageServiceApi>()("Loc
 			const raw = storage.getItem(THEME_KEY);
 			if (!raw) return "dark" as Theme;
 
-			let parsed: unknown;
-			try {
-				parsed = JSON.parse(raw);
-			} catch {
-				parsed = raw;
-			}
+			const parsed: unknown = yield* Effect.sync(() => {
+				try {
+					return JSON.parse(raw);
+				} catch {
+					return raw;
+				}
+			});
 
 			const decoded = yield* Schema.decodeUnknown(ThemeSchema)(parsed).pipe(
-				Effect.mapError(
-					(err) =>
+				Effect.catchTag("ParseError", (err) =>
+					Effect.fail(
 						new LocalStorageDecodeError({
 							key: THEME_KEY,
 							message: String(err.message),
 						}),
+					),
 				),
 			);
 			return decoded as Theme;
@@ -147,13 +138,11 @@ export const LocalStorageService = Effect.Service<LocalStorageServiceApi>()("Loc
 				storage.setItem(THEME_KEY, JSON.stringify(theme));
 			});
 
-		const loadCurrentOrgId: LocalStorageServiceApi["loadCurrentOrgId"] = Effect.gen(
-			function* () {
-				const raw = storage.getItem(CURRENT_ORG_ID_KEY);
-				if (!raw) return Option.none<OrganizationId>();
-				return Option.some(raw as OrganizationId);
-			},
-		);
+		const loadCurrentOrgId: LocalStorageServiceApi["loadCurrentOrgId"] = Effect.sync(() => {
+			const raw = storage.getItem(CURRENT_ORG_ID_KEY);
+			if (!raw) return Option.none<OrganizationId>();
+			return Option.some(raw as OrganizationId);
+		});
 
 		const saveCurrentOrgId: LocalStorageServiceApi["saveCurrentOrgId"] = (idOption) =>
 			Effect.sync(() => {
@@ -164,14 +153,12 @@ export const LocalStorageService = Effect.Service<LocalStorageServiceApi>()("Loc
 				}
 			});
 
-		const loadMarkedDates: LocalStorageServiceApi["loadMarkedDates"] = Effect.gen(
-			function* () {
-				const raw = storage.getItem(MARKED_DATES_KEY);
-				if (!raw) return {};
-				const decoded = yield* parseJson(MARKED_DATES_KEY, raw, MarkedDatesSchema);
-				return decoded as MarkedDatesMap;
-			},
-		);
+		const loadMarkedDates: LocalStorageServiceApi["loadMarkedDates"] = Effect.gen(function* () {
+			const raw = storage.getItem(MARKED_DATES_KEY);
+			if (!raw) return {};
+			const decoded = yield* parseJson(MARKED_DATES_KEY, raw, MarkedDatesSchema);
+			return decoded as MarkedDatesMap;
+		});
 
 		const saveMarkedDates: LocalStorageServiceApi["saveMarkedDates"] = (marked) =>
 			encodeJson(MARKED_DATES_KEY, marked, MarkedDatesSchema).pipe(
@@ -183,23 +170,21 @@ export const LocalStorageService = Effect.Service<LocalStorageServiceApi>()("Loc
 				Effect.asVoid,
 			);
 
-		const loadOrganizations: LocalStorageServiceApi["loadOrganizations"] = Effect.gen(
-			function* () {
-				const raw = storage.getItem(ORGANIZATIONS_KEY);
-				if (!raw) return [];
-				const _ = yield* parseJson(ORGANIZATIONS_KEY, raw, OrganizationsSchema);
-				// For now, we trust existing manual mapping code in AppState/AuthHandlers
-				// to coerce raw rows into Organization domain objects.
-				return JSON.parse(raw) as ReadonlyArray<Organization>;
-			},
-		);
+		const loadOrganizations: LocalStorageServiceApi["loadOrganizations"] = Effect.gen(function* () {
+			const raw = storage.getItem(ORGANIZATIONS_KEY);
+			if (!raw) return [];
+			yield* parseJson(ORGANIZATIONS_KEY, raw, OrganizationsSchema);
+			// For now, we trust existing manual mapping code in AppState/AuthHandlers
+			// to coerce raw rows into Organization domain objects.
+			return JSON.parse(raw) as ReadonlyArray<Organization>;
+		});
 
 		const saveOrganizations: LocalStorageServiceApi["saveOrganizations"] = (orgs) =>
 			Effect.sync(() => {
 				storage.setItem(ORGANIZATIONS_KEY, JSON.stringify(orgs));
 			});
 
-		const loadLastOrgId: LocalStorageServiceApi["loadLastOrgId"] = Effect.gen(function* () {
+		const loadLastOrgId: LocalStorageServiceApi["loadLastOrgId"] = Effect.sync(() => {
 			const raw = storage.getItem(LAST_ORG_ID_KEY);
 			if (!raw) return Option.none<OrganizationId>();
 			return Option.some(raw as OrganizationId);
@@ -237,4 +222,3 @@ export const LocalStorageService = Effect.Service<LocalStorageServiceApi>()("Loc
 		};
 	}),
 });
-

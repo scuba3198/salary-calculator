@@ -8,8 +8,8 @@ import type {
 } from "../../types/app.types";
 import { organizationFromDb } from "../../types/app.types";
 import type { AppState } from "../AppState";
-import { SupabaseService } from "./SupabaseService";
 import { LocalStorageService } from "./LocalStorageService";
+import { SupabaseService } from "./SupabaseService";
 
 export class OrgService extends Effect.Service<OrgService>()("OrgService", {
 	accessors: true,
@@ -48,7 +48,12 @@ export class OrgService extends Effect.Service<OrgService>()("OrgService", {
 				currentOrgId: Option.some(newOrg.id),
 				markedDates: {},
 			}));
-			yield* localStorageService.saveLastOrgId(newOrg.id).pipe(Effect.catchAll(() => Effect.void));
+			yield* localStorageService.saveLastOrgId(newOrg.id).pipe(
+				Effect.catchTags({
+					LocalStorageDecodeError: () => Effect.void,
+					LocalStorageUnavailableError: () => Effect.void,
+				}),
+			);
 		});
 
 		const switchOrganization = Effect.fn("OrgService.switchOrganization")(function* (
@@ -65,7 +70,12 @@ export class OrgService extends Effect.Service<OrgService>()("OrgService", {
 				markedDates: {},
 				isSyncing: true,
 			}));
-			yield* localStorageService.saveLastOrgId(orgId).pipe(Effect.catchAll(() => Effect.void));
+			yield* localStorageService.saveLastOrgId(orgId).pipe(
+				Effect.catchTags({
+					LocalStorageDecodeError: () => Effect.void,
+					LocalStorageUnavailableError: () => Effect.void,
+				}),
+			);
 
 			if (Option.isSome(state.user) && orgId !== "guest") {
 				const attendance = yield* supabase.query<AttendancePartial[]>(
@@ -127,9 +137,12 @@ export class OrgService extends Effect.Service<OrgService>()("OrgService", {
 				state.currentOrgId.value === id &&
 				Option.isSome(stateAfterDelete.currentOrgId)
 			) {
-				yield* localStorageService
-					.saveLastOrgId(stateAfterDelete.currentOrgId.value)
-					.pipe(Effect.catchAll(() => Effect.void));
+				yield* localStorageService.saveLastOrgId(stateAfterDelete.currentOrgId.value).pipe(
+					Effect.catchTags({
+						LocalStorageDecodeError: () => Effect.void,
+						LocalStorageUnavailableError: () => Effect.void,
+					}),
+				);
 				const attendance = yield* supabase.query<AttendancePartial[]>(
 					"fetchAttendance",
 					supabase.client

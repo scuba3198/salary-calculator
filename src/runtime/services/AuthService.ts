@@ -17,7 +17,7 @@ export interface AuthServiceApi {
 	readonly signOut: () => Effect.Effect<undefined, AuthSignOutError, never>;
 }
 
-export class AuthService extends Effect.Service<AuthServiceApi>()("AuthService", {
+export class AuthService extends Effect.Service<AuthService>()("AuthService", {
 	accessors: true,
 	dependencies: [SupabaseService.Default],
 	effect: Effect.gen(function* () {
@@ -54,7 +54,7 @@ export class AuthService extends Effect.Service<AuthServiceApi>()("AuthService",
 						cause: err instanceof Error ? err.message : undefined,
 					}),
 			});
-			if (error) return yield* Effect.fail(new AuthSignInError({ message: error.message }));
+			if (error) return yield* new AuthSignInError({ message: error.message });
 		});
 
 		const signUp = Effect.fn("AuthService.signUp")(function* (
@@ -75,7 +75,7 @@ export class AuthService extends Effect.Service<AuthServiceApi>()("AuthService",
 						cause: err instanceof Error ? err.message : undefined,
 					}),
 			});
-			if (error) return yield* Effect.fail(new AuthSignUpError({ message: error.message }));
+			if (error) return yield* new AuthSignUpError({ message: error.message });
 		});
 
 		const signOut = Effect.fn("AuthService.signOut")(function* () {
@@ -87,7 +87,7 @@ export class AuthService extends Effect.Service<AuthServiceApi>()("AuthService",
 						cause: err instanceof Error ? err.message : undefined,
 					}),
 			});
-			if (error) return yield* Effect.fail(new AuthSignOutError({ message: error.message }));
+			if (error) return yield* new AuthSignOutError({ message: error.message });
 		});
 
 		return { authChanges, signIn, signUp, signOut };

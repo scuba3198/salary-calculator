@@ -1,6 +1,7 @@
 import { readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import assert from "node:assert/strict";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SRC_DIR = path.join(ROOT, "src");
@@ -23,7 +24,12 @@ async function* walk(dir) {
 	}
 }
 
-const isSourceFile = (p) => p.endsWith(".ts") || p.endsWith(".tsx");
+const isSourceFile = (p) => /\.tsx?$/.test(p) && !/\.(test|spec)\.tsx?$/.test(p);
+
+assert(isSourceFile("src/runtime/AppRuntime.ts"));
+assert(isSourceFile("src/components/Calendar.tsx"));
+assert(!isSourceFile("src/runtime/services/LocalStorageService.test.ts"));
+assert(!isSourceFile("src/components/Calendar.spec.tsx"));
 
 const violations = [];
 

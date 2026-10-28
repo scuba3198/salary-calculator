@@ -10,7 +10,7 @@ export interface AppLoggerApi {
 	}) => Effect.Effect<void>;
 }
 
-export class AppLogger extends Effect.Service<AppLoggerApi>()("AppLogger", {
+export class AppLogger extends Effect.Service<AppLogger>()("AppLogger", {
 	accessors: true,
 	effect: Effect.succeed({
 		bootFailure: Effect.fn("AppLogger.bootFailure")(function* (cause: unknown) {
@@ -26,7 +26,9 @@ export class AppLogger extends Effect.Service<AppLoggerApi>()("AppLogger", {
 
 			yield* Effect.logError({ _tag: "BootFailure", rendered });
 		}),
-		boundaryError: Effect.fn("AppLogger.boundaryError")(function* (payload) {
+		boundaryError: Effect.fn("AppLogger.boundaryError")(function* (
+			payload: Parameters<AppLoggerApi["boundaryError"]>[0],
+		) {
 			yield* Effect.logError({ _tag: "ReactErrorBoundary", ...payload });
 		}),
 	}),

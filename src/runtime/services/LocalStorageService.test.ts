@@ -1,12 +1,12 @@
-import { Effect, Layer, Option } from "effect";
-import { describe, expect, it, beforeEach } from "vitest";
+import { Effect, Option } from "effect";
+import { beforeEach, describe, expect, it } from "vitest";
 import type { AppState } from "../AppState";
 import { initialAppState } from "../AppState";
-import { LocalStorageService } from "./LocalStorageService";
+import { LocalStorageService, type LocalStorageServiceApi } from "./LocalStorageService";
 
 const TestLive = LocalStorageService.Default;
-const run = <A>(eff: Effect.Effect<A, unknown, never>) =>
-	Effect.runSync(Effect.provide(eff, TestLive as Layer.Layer<never>));
+const run = <A>(eff: Effect.Effect<A, unknown, LocalStorageServiceApi>) =>
+	Effect.runSync(Effect.provide(eff, TestLive));
 
 describe("LocalStorageService", () => {
 	beforeEach(() => {
@@ -40,6 +40,16 @@ describe("LocalStorageService", () => {
 		expect(loaded).toEqual(Option.some(orgId));
 	});
 
+	it("reads the latest saved organization id each time", () => {
+		const svc = run(LocalStorageService);
+		expect(run(svc.loadLastOrgId)).toEqual(Option.none());
+		const orgId = "org-123" as Parameters<typeof svc.saveLastOrgId>[0];
+		run(svc.saveLastOrgId(orgId));
+		expect(run(svc.loadLastOrgId)).toEqual(Option.some(orgId));
+		window.localStorage.removeItem("last_org_id");
+		expect(run(svc.loadLastOrgId)).toEqual(Option.none());
+	});
+
 	it("persists guest state from AppState", () => {
 		const svc = run(LocalStorageService);
 		const state: AppState = {
@@ -62,8 +72,14 @@ describe("LocalStorageService", () => {
 		const svc = run(LocalStorageService);
 		window.localStorage.setItem("markedDates", "{not-json");
 
-		const result = Effect.runSyncExit(svc.loadMarkedDates);
-		expect(result._tag).toBe("Failure");
+		const error = run(Effect.flip(svc.loadMarkedDates));
+		expect(error).toMatchObject({ _tag: "LocalStorageDecodeError", key: "markedDates" });
+	});
+
+	it("returns a decode error for stored JSON that violates the schema", () => {
+		const svc = run(LocalStorageService);
+		window.localStorage.setItem("markedDates", '{"2081-1-1":"invalid"}');
+		const error = run(Effect.flip(svc.loadMarkedDates));
+		expect(error).toMatchObject({ _tag: "LocalStorageDecodeError", key: "markedDates" });
 	});
 });
-
